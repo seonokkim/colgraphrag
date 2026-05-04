@@ -33,15 +33,30 @@ eval/evaluate_webqa_qa.py  Phase 6  QA-FL / QA-Acc / QA evaluation
 
 ---
 
-## Requirements
+## Prerequisites
 
-- Python 3.10+
-- CUDA 12.4 + NVIDIA GPU (A100 / H100 recommended)
-- ~16 GB VRAM (when loading ColEmbed 3B + Gemma 4 E4B IT simultaneously)
+| Item | Details |
+|------|---------|
+| **OS** | Linux x86_64 (recommended; matches published PyTorch `cu124` wheels) |
+| **Python** | **3.10+** (`requirements.txt` comment targets 3.10+; **3.11** is commonly used in CI/notebooks) |
+| **GPU** | NVIDIA GPU with a driver new enough for **CUDA 12.4** (newer drivers, e.g. reporting CUDA **12.6 / 12.8** in `nvidia-smi`, are usually fine) |
+| **CUDA runtime** | You do **not** need a full system CUDA toolkit for the default setup: pip installs **PyTorch `+cu124`**, which bundles the needed NVIDIA libraries. |
+| **PyTorch / CUDA wheels** | Pinned in `requirements.txt`: **torch 2.6.0+cu124**, **torchvision 0.21.0+cu124**, **torchaudio 2.6.0+cu124** (index: `https://download.pytorch.org/whl/cu124`) |
+| **VRAM** | **~16 GB** when loading **ColEmbed 3B** and **Gemma 4 E4B IT** at the same time (more headroom recommended) |
+| **Hardware class** | A100 / H100 class GPUs are recommended for throughput; other datacenter GPUs (e.g. **A6000**) work if VRAM fits |
+
+### Install
+
+Use a virtual environment at the repo root, then:
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
+
+`requirements.txt` sets `--index-url` to the PyTorch **cu124** wheel index so CUDA builds resolve correctly.
 
 ---
 
