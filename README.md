@@ -4,9 +4,6 @@ A query-driven pipeline that builds **per-question NetworkX graphs (GraphML)**,
 reranks image candidates with **ColEmbed late interaction (MaxSim)**,
 and generates final answers with an **LLM (Gemma, etc.)**.
 
-> This repository is a **clean version** of the research original (`colgraphrag_webqa`)
-> with unused legacy code (Chroma, BGE-M3, async branches) removed.
-
 ---
 
 ## Notebook tutorial
@@ -173,7 +170,7 @@ cd /workspace/mmgraphrag/lecture/code/colgraphrag_webqa
 python tests/test_pipeline.py --dry-run -n 5
 ```
 
-`tests/test_pipeline.py` in this clean package only runs **Hugging Face Gemma in-process** (default) or **`--dry-run`**. There is no `--http-llm` / Ollama integration on this entrypoint.
+`tests/test_pipeline.py` runs **Hugging Face Gemma in-process** (default) or **`--dry-run`**. There is no `--http-llm` / Ollama integration on this entrypoint.
 
 ### Run all 66 toy queries
 
