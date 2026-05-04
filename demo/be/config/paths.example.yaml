@@ -1,0 +1,36 @@
+# Demo backend — path template for colgraphrag_webqa.
+# Copy to paths.yaml and adjust. Paths below are relative to repo root unless absolute.
+#
+# Repo root = directory that contains data/, result/, models/, pattern.py, …
+# It is inferred as three levels above this file (demo/be/config → colgraphrag_webqa).
+
+version: 1
+
+# Override package root (empty = auto)
+repo_root: ""
+
+run:
+  # Under <repo>/result/<run_id>/ — graphs, predictions, copied webqa_slice live here.
+  # Use "latest" to pick the subdirectory with the newest mtime (see resolve_demo_paths.py).
+  run_id: "latest"
+  # If set, use this directory as the run root instead of result/<run_id>.
+  # Relative paths are resolved from repo_root.
+  explicit_result_dir: ""
+
+webqa:
+  data_root: "data/webqa"
+  shard14_slice: "data/webqa/webqa_shard14_toy/webqa_slice"
+  imgs_dir: "data/webqa/WebQA_imgs_7z_chunks/imgs/all_png/shard_00014"
+  # Optional: full train/val JSON for pattern phase (default: under WEBQA_DATA_ROOT)
+  train_val_json: ""
+
+models:
+  gemma: "models/mllm/gemma-4-E4B-it"
+  colembed: "models/retriever/llama-nemotron-colembed-vl-3b-v2"
+  fluency_bart: "models/eval/bart-large-cnn"
+
+# Subdirs inside result/<run_id>/ (usually do not change)
+result_layout:
+  webqa_slice: "webqa_slice"
+  phase4_graphs_out: "phase4_graphs_out"
+  phase5_inference: "phase5_inference"

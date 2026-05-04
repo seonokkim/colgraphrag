@@ -1,0 +1,36 @@
+# Model checkpoints and retriever settings (colgraphrag_webqa).
+# hf_repo_id: Hugging Face Hub id for `huggingface-cli download <id> --local-dir …`
+# Batch download (reads this file + .env token) -> util/download_models.py
+# Mapped to environment variables by util.repo_config — existing env wins.
+# See README / .env.example for HF tokens.
+
+version: 1
+
+gemma:
+  # Pattern / extraction / inference LLM
+  hf_repo_id: "google/gemma-4-E4B-it"
+  # Local-first: models/mllm/gemma-4-E4B-it (via download_models.py), fallback /workspace/models/...
+  e4b_it_path: "models/mllm/gemma-4-E4B-it"
+
+colembed:
+  # MaxSim retrieval (ColEmbed VL 3B v2)
+  hf_repo_id: "nvidia/llama-nemotron-colembed-vl-3b-v2"
+  # Local-first: models/retriever/..., fallback /workspace/models/retriever/...
+  model_path: "models/retriever/llama-nemotron-colembed-vl-3b-v2"
+  # If set, overrides hf_repo_id for COLEMBED_MODEL_ID; leave empty to use hf_repo_id.
+  model_id: ""
+  trust_remote_code: true
+  max_input_tiles: 8
+  topk_images: 10
+  backend: "model"
+  batch_docs: 64
+  score_batch_size: 128
+  top_k_per_query: 20
+  final_top_k: 20
+  rrf_k: 60
+  max_keywords: 5
+  score_mode: "rrf"
+  query_expansion: true
+
+fluency:
+  model: "facebook/bart-large-cnn"

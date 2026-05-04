@@ -1,0 +1,24 @@
+# WebQA data paths (colgraphrag_webqa).
+# Paths are relative to the package root unless absolute.
+# Applied at import time via util.repo_config (after .env) — existing env wins.
+
+version: 1
+
+webqa:
+  # If set to a non-empty path, applied as WEBQA_DATA_ROOT only when that path exists
+  # (so local bundle missing still falls back in default_webqa_data_root()).
+  # Leave empty to use only code defaults: <repo>/data/webqa, else /workspace/data/webqa.
+  data_root: ""
+
+  # Optional explicit JSON paths (override defaults under data_root).
+  train_val_json: ""
+  test_json: ""
+
+pattern:
+  # Optional default WEBQA_JSON_FILE when unset (pattern / inference drivers).
+  json_file: ""
+
+# Reference layout for tiny shard-14 toy slice (tests use env overrides).
+shard14_toy:
+  webqa_slice: "data/webqa/webqa_shard14_toy/webqa_slice"
+  shard14_png_dir: "data/webqa/WebQA_imgs_7z_chunks/imgs/all_png/shard_00014"
