@@ -12,18 +12,24 @@ Usage:
 
 from __future__ import annotations
 
+import logging
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncIterator
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
 _BE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(_BE_DIR))
 
-from config.resolve_demo_paths import load_demo_paths, DemoPaths
+from services.logging_setup import configure_demo_file_logging
+
+_SESSION_LOG = configure_demo_file_logging(_BE_DIR)
+print(f"[demo-be] Session log: {_SESSION_LOG}", flush=True)
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from config.resolve_demo_paths import demo_paths_as_dict, load_demo_paths, DemoPaths
 from routers.health_router import router as health_router, set_run_id
 from routers.run_router import router as run_router
 from routers.questions_router import router as questions_router
@@ -35,6 +41,8 @@ from services.question_service import QuestionService
 from services.graph_service import GraphService
 from services.image_service import ImageService
 from services.llm_service import LLMService
+
+logger = logging.getLogger(__name__)
 
 
 _ORIGINS = [
@@ -51,11 +59,13 @@ async def lifespan(application: FastAPI) -> AsyncIterator[None]:
     try:
         paths = load_demo_paths()
         _init_services(application, paths)
-        print(f"[demo-be] Loaded run: {paths.run_id}")
-        print(f"[demo-be] Result dir: {paths.result_run_dir}")
+        logger.info("Loaded run_id=%s", paths.run_id)
+        logger.info("Result dir: %s", paths.result_run_dir)
+        for k, v in demo_paths_as_dict(paths).items():
+            logger.info("paths.%s=%s", k, v)
     except FileNotFoundError as e:
-        print(f"[demo-be] Warning: Could not load paths: {e}")
-        print("[demo-be] Some endpoints may not work until result data exists.")
+        logger.warning("Could not load paths: %s", e)
+        logger.warning("Some endpoints may not work until result data exists.")
     yield
 
 
@@ -145,4 +155,6 @@ if __name__ == "__main__":
         host=args.host,
         port=args.port,
         reload=args.reload,
+        log_level="info",
+        access_log=True,
     )

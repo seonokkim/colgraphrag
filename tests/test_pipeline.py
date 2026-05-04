@@ -22,12 +22,40 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import json
+import io
 import os
 import shutil
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
+
+
+class _TeeTextStream(io.TextIOBase):
+    """Duplicate writes to a primary stream (e.g. terminal) and a log file."""
+
+    def __init__(self, primary: io.TextIOBase, secondary: io.TextIOBase) -> None:
+        super().__init__()
+        self._primary = primary
+        self._secondary = secondary
+
+    @property
+    def encoding(self) -> str:  # noqa: D401
+        return getattr(self._primary, "encoding", None) or "utf-8"
+
+    def write(self, s: str) -> int:  # type: ignore[override]
+        self._primary.write(s)
+        self._secondary.write(s)
+        self._primary.flush()
+        self._secondary.flush()
+        return len(s)
+
+    def flush(self) -> None:  # type: ignore[override]
+        self._primary.flush()
+        self._secondary.flush()
+
+    def isatty(self) -> bool:  # type: ignore[override]
+        return bool(self._primary.isatty())
 
 _BASE_DIR = Path(__file__).resolve().parent.parent
 _LOCAL_DATA = _BASE_DIR / "data" / "webqa"
@@ -49,6 +77,12 @@ def _resolve_shard14_imgs() -> str:
 
 SHARD14_TOY_SLICE_DIR = _resolve_shard14_toy_slice()
 SHARD14_TOY_IMGS_DIR = _resolve_shard14_imgs()
+
+_repo_root_str = str(_BASE_DIR)
+if _repo_root_str not in sys.path:
+    sys.path.insert(0, _repo_root_str)
+from util.llm_defaults import DEFAULT_GEMMA4_E4B_IT_MODEL_PATH  # noqa: E402
+from util.run_id import stamped_run_id  # noqa: E402
 
 
 def run_cmd(cmd: list[str], env: dict[str, str], cwd: Path, desc: str) -> int:
@@ -120,13 +154,40 @@ def main():
             print(f"[ERROR] webqa_slice_dir not found: {args.webqa_slice_dir}")
             return 1
 
-    base_dir = Path(__file__).resolve().parent.parent
-    sys.path.insert(0, str(base_dir))
-    from util.llm_defaults import DEFAULT_GEMMA4_E4B_IT_MODEL_PATH
-    from util.run_id import stamped_run_id
+    base_dir = _BASE_DIR
 
     run_id = args.run_id or stamped_run_id("5query_test")
     result_dir = base_dir / "result" / run_id
+
+    logs_dir = base_dir / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    _stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    _safe_run_id = "".join(c if c not in '\\/:' else "_" for c in run_id.replace(os.sep, "_"))
+    session_log_path = logs_dir / f"{_stamp}_test_pipeline_{_safe_run_id}.log"
+    session_log_file = session_log_path.open("w", encoding="utf-8")
+    _old_stdout, _old_stderr = sys.stdout, sys.stderr
+    sys.stdout = _TeeTextStream(_old_stdout, session_log_file)
+    sys.stderr = _TeeTextStream(_old_stderr, session_log_file)
+
+    try:
+        rc = _main_run(
+            args, base_dir, result_dir, prebuilt_slice_dir, run_id, session_log_path
+        )
+        return rc
+    finally:
+        sys.stdout = _old_stdout
+        sys.stderr = _old_stderr
+        session_log_file.close()
+
+
+def _main_run(
+    args,
+    base_dir: Path,
+    result_dir: Path,
+    prebuilt_slice_dir: Path | None,
+    run_id: str,
+    session_log_path: Path,
+) -> int:
 
     py = sys.executable
     n_queries = args.n_queries
@@ -135,6 +196,7 @@ def main():
     print(f"{'='*60}")
     print(f"colgraphrag_webqa Pipeline Test (clean)")
     print(f"{'='*60}")
+    print(f"Session log: {session_log_path}")
     print(f"Run ID: {run_id}")
     print(f"Base dir: {base_dir}")
     print(f"Result dir: {result_dir}")
@@ -213,13 +275,13 @@ def main():
         results["phase0_export"] = rc == 0
         if rc != 0:
             print("[ABORT] Phase 0 failed, cannot continue")
-            sys.exit(1)
+            return 1
 
     q_file = slice_dir / "webqa_questions.jsonl"
     t_file = slice_dir / "webqa_texts.jsonl"
     if not q_file.exists() or not t_file.exists():
         print(f"[ERROR] Export files missing: {q_file.exists()=}, {t_file.exists()=}")
-        sys.exit(1)
+        return 1
 
     with open(q_file, "r") as f:
         n_exported = sum(1 for _ in f)
