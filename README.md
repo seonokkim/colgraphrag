@@ -8,11 +8,14 @@ and generates final answers with an **LLM (Gemma, etc.)**.
 
 ## Notebook tutorial
 
-Step-by-step walkthrough (env setup, one-shot `test_pipeline.py`, optional per-phase cells):
+Step-by-step walkthrough (venv + CUDA notes, GPU check, `test_pipeline.py`, manual phase cells, optional demo FE/BE):
 
-- `notebook/01_colgraphrag_webqa_pipeline_tutorial.ipynb`
+| Notebook | Language |
+|----------|----------|
+| `notebook/colgraphrag_webqa_pipeline_tutorial_eng.ipynb` | English |
+| `notebook/colgraphrag_webqa_pipeline_tutorial_kor.ipynb` | Korean (aligned with the English notebook) |
 
-Start Jupyter from the repo root, or open in VS Code / Cursor.
+Start Jupyter from the repo root (so `REPO` auto-detection finds `inference.py`), or open either `.ipynb` in VS Code / Cursor and select the project **`.venv`** kernel.
 
 ## Pipeline Overview
 
