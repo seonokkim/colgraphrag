@@ -295,6 +295,10 @@ run:
 | **Results** | Question list, predicted answers, gold answers, graph viewer |
 | **Live Chat** | Real-time chat with graph context (Gemma LLM) |
 
+![Demo — Results tab](asset/demo_result.png)
+
+![Demo — Live Chat tab](asset/demo_livechat.png)
+
 More detail: `demo/README.md` (API, paths, RunPod notes).
 
 ---
