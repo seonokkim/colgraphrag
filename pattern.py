@@ -12,7 +12,8 @@ import math
 
 from prompt import GRAPH_PATTERN_PROMPT
 from util.llm_defaults import DEFAULT_GEMMA4_E4B_IT_MODEL_PATH, ensure_default_gemma4_e4b_it_path
-from util.run_id import default_stamp
+from util.repo_config import forbid_dry_run, require_cuda, require_gemma_local
+from util.result_layout import resolve_pipeline_run_id
 from util.webqa_load import (
     default_pattern_json_path,
     is_webqa_json_path,
@@ -24,11 +25,15 @@ ensure_default_gemma4_e4b_it_path()
 
 CONCURRENCY = int(os.getenv("PATTERN_CONCURRENCY", "16"))
 _BASE_DIR = Path(__file__).resolve().parent
-_RUN_ID = os.getenv("MMGRAPHRAG_RUN_ID", default_stamp()).strip()
-JSON_FILE_PATH = os.getenv(
-    "PATTERN_JSON_FILE_PATH",
-    str(default_pattern_json_path()),
+_DATASET = os.getenv("MMGRAPHRAG_DATASET", "webqa").strip().lower()
+_RUN_ID = resolve_pipeline_run_id(_BASE_DIR, _DATASET)
+
+_default_json = (
+    str(_BASE_DIR / "result" / _RUN_ID / "mmqa_slice" / "mmqa_questions.jsonl")
+    if _DATASET == "mmqa"
+    else str(default_pattern_json_path())
 )
+JSON_FILE_PATH = os.getenv("PATTERN_JSON_FILE_PATH", _default_json)
 CACHE_DIR = os.getenv(
     "PATTERN_CACHE_DIR",
     str(_BASE_DIR / "result" / _RUN_ID / "phase2_pattern_cache"),
@@ -69,7 +74,7 @@ async def load_json_data() -> List[Dict]:
     if is_webqa_json_path(JSON_FILE_PATH):
         return records_for_pattern(JSON_FILE_PATH, resolve_profile())
     with open(JSON_FILE_PATH, "r", encoding="utf-8") as file:
-        return [json.loads(line) for line in file]
+        return [json.loads(line) for line in file if line.strip()]
 
 
 def hash_prompt(prompt: str) -> str:
@@ -127,6 +132,10 @@ async def process_batch(session: aiohttp.ClientSession, template: str, json_data
 
 
 async def main():
+    forbid_dry_run("pattern", dry_run=DRY_RUN)
+    if not DRY_RUN:
+        require_cuda("pattern")
+        require_gemma_local("pattern")
     os.makedirs(CACHE_DIR, exist_ok=True)
     template = GRAPH_PATTERN_PROMPT
     json_data = await load_json_data()
@@ -141,4 +150,10 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import asyncio
+    from pathlib import Path
+
+    from util.pipeline_session_log import run_with_session_stdio_tee
+
+    _repo = Path(__file__).resolve().parent
+    run_with_session_stdio_tee(_repo, "pattern", lambda: asyncio.run(main()))

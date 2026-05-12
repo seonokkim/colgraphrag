@@ -1,0 +1,42 @@
+{
+  "response": "[\"ENTITY\",\"ATTRIBUTE\"]##ENTITY <|> related_to <|> ATTRIBUTE<|COMPLETE|>",
+  "question": {
+    "Guid": "d5be78420dba11ecb1e81171463288e9",
+    "Q": "On Khao San Road , Bangkok , Thailand Which housing option has a darker sign the D and D Inn or Center Point Plaza Hotel ?",
+    "A": [
+      "The D and D Inn on Khao San Road, Bangkok, Thailand has a darker sign."
+    ],
+    "Keywords_A": "D and D Inn",
+    "Qcate": "choose",
+    "split": "val",
+    "img_posFacts": [
+      {
+        "image_id": "30072264",
+        "title": "WebQA image 30072264",
+        "caption": "",
+        "url": "data/webqa/WebQA_imgs_7z_chunks/imgs/all_png/shard_00014/00072264_30072264.png"
+      }
+    ],
+    "txt_posFacts": [
+      {
+        "snippet_id": "d5be78420dba11ecb1e81171463288e9_txt",
+        "fact": "D and D Inn"
+      }
+    ],
+    "metadata": {
+      "image_doc_ids": [
+        "30072264"
+      ],
+      "text_doc_ids": [
+        "d5be78420dba11ecb1e81171463288e9_txt"
+      ]
+    }
+  },
+  "dry_run": true,
+  "created_at": "2026-05-11T13:38:58.370897",
+  "llm": {
+    "tier": "dry-run",
+    "model": "(none)",
+    "base_url": "(none)"
+  }
+}

@@ -1,25 +1,56 @@
 import { useState, useEffect } from 'react';
 import { GitBranch, Plus, LayoutList, MessageCircle } from 'lucide-react';
 import { api } from '@/api/client';
+import { useDataset } from '@/contexts/DatasetContext';
 import { ResultsTab } from '@/components/ResultsTab';
 import { LiveChatTab } from '@/components/LiveChatTab';
-import type { RunInfo, QuestionSummary } from '@/types';
+import type { RunInfo, QuestionSummary, DatasetInfo } from '@/types';
 
 type Tab = 'results' | 'chat';
 
+const DATASET_COLORS = {
+  webqa: {
+    active: 'bg-[#ede9fe] text-[#7c3aed]',
+    inactive: 'text-[#6a6a6a] hover:bg-[#f7f7f7]',
+  },
+  mmqa: {
+    active: 'bg-[#dbeafe] text-[#1d4ed8]',
+    inactive: 'text-[#6a6a6a] hover:bg-[#f7f7f7]',
+  },
+};
+
 export function ChatPage() {
+  const { dataset, setDataset } = useDataset();
   const [runInfo, setRunInfo] = useState<RunInfo | null>(null);
   const [questions, setQuestions] = useState<QuestionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('results');
   const [chatKey, setChatKey] = useState(0);
+  const [availableDatasets, setAvailableDatasets] = useState<DatasetInfo[]>([]);
 
+  // Load available datasets once on mount
   useEffect(() => {
+    api.getDatasets().then((resp) => {
+      setAvailableDatasets(resp.datasets);
+    }).catch(() => {
+      // Fallback: assume both available
+      setAvailableDatasets([
+        { key: 'webqa', label: 'WebQA', available: true, run_id: null },
+        { key: 'mmqa', label: 'MultimodalQA', available: true, run_id: null },
+      ]);
+    });
+  }, []);
+
+  // Reload questions and run info whenever dataset changes
+  useEffect(() => {
+    setLoading(true);
+    setRunInfo(null);
+    setQuestions([]);
     async function loadInitialData() {
       try {
         const [info, qs] = await Promise.all([
-          api.getRunInfo(),
-          api.getQuestions(),
+          api.getRunInfo(dataset),
+          api.getQuestions(dataset),
         ]);
         setRunInfo(info);
         setQuestions(qs);
@@ -30,11 +61,17 @@ export function ChatPage() {
       }
     }
     loadInitialData();
-  }, []);
+  }, [dataset]);
 
   function handleNewChat() {
     setActiveTab('chat');
     setChatKey((k) => k + 1);
+  }
+
+  function handleDatasetSwitch(key: typeof dataset) {
+    if (key === dataset) return;
+    setDataset(key);
+    setActiveTab('results');
   }
 
   const predictedCount = questions.filter((q) => q.predicted_answer).length;
@@ -53,14 +90,45 @@ export function ChatPage() {
               <h1 className="text-[15px] text-[#1a1a1a]" style={{ fontWeight: 500 }}>
                 ColGraphRAG
               </h1>
-              <p className="text-[11px] text-[#9a9a9a]">WebQA Demo</p>
+              <p className="text-[11px] text-[#9a9a9a]">Multi-Dataset Demo</p>
             </div>
           </div>
+
+          {/* Dataset switcher */}
+          <div className="flex gap-1 bg-[#f4f4f4] rounded-lg p-0.5 mb-3">
+            {availableDatasets.map((ds) => (
+              <button
+                key={ds.key}
+                onClick={() => handleDatasetSwitch(ds.key)}
+                disabled={!ds.available}
+                title={!ds.available ? `${ds.label} results not available` : ds.run_id ?? undefined}
+                className={`flex-1 text-[11px] px-2 py-1.5 rounded-md transition-all ${
+                  dataset === ds.key
+                    ? DATASET_COLORS[ds.key].active
+                    : ds.available
+                    ? DATASET_COLORS[ds.key].inactive
+                    : 'text-[#c0c0c0] cursor-not-allowed'
+                }`}
+                style={{ fontWeight: dataset === ds.key ? 600 : 400 }}
+              >
+                {ds.label}
+              </button>
+            ))}
+          </div>
+
           {runInfo && (
             <div className="flex items-center gap-1.5 bg-[#f0fdf4] border border-[#bbf7d0] rounded-full px-3 py-1.5 w-fit">
               <div className="w-1.5 h-1.5 bg-[#22c55e] rounded-full" />
               <span className="text-[10px] text-[#15803d]" style={{ fontWeight: 500 }}>
                 {predictedCount} answered / {questions.length} total
+              </span>
+            </div>
+          )}
+          {!runInfo && !loading && (
+            <div className="flex items-center gap-1.5 bg-[#fef3c7] border border-[#fcd34d] rounded-full px-3 py-1.5 w-fit">
+              <div className="w-1.5 h-1.5 bg-[#f59e0b] rounded-full" />
+              <span className="text-[10px] text-[#92400e]" style={{ fontWeight: 500 }}>
+                {questions.length} questions loaded
               </span>
             </div>
           )}
@@ -117,9 +185,9 @@ export function ChatPage() {
 
       {/* Main content area */}
       {activeTab === 'results' ? (
-        <ResultsTab questions={questions} loading={loading} />
+        <ResultsTab questions={questions} loading={loading} dataset={dataset} />
       ) : (
-        <LiveChatTab key={chatKey} />
+        <LiveChatTab key={chatKey} dataset={dataset} />
       )}
     </div>
   );

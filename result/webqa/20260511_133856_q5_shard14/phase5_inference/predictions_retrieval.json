@@ -1,0 +1,47 @@
+{
+  "d5cb27900dba11ecb1e81171463288e9": [
+    {
+      "id": "30073400",
+      "score": 19.57929229736328,
+      "rank": 1,
+      "source": "colembed_maxsim",
+      "model_ref": "/home/seono/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    }
+  ],
+  "d5ca85b00dba11ecb1e81171463288e9": [
+    {
+      "id": "30072916",
+      "score": 23.109493255615234,
+      "rank": 1,
+      "source": "colembed_maxsim",
+      "model_ref": "/home/seono/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    }
+  ],
+  "d5c827980dba11ecb1e81171463288e9": [
+    {
+      "id": "30071071",
+      "score": 20.546611785888672,
+      "rank": 1,
+      "source": "colembed_maxsim",
+      "model_ref": "/home/seono/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    }
+  ],
+  "d5c8f1780dba11ecb1e81171463288e9": [
+    {
+      "id": "30071009",
+      "score": 16.94076156616211,
+      "rank": 1,
+      "source": "colembed_maxsim",
+      "model_ref": "/home/seono/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    }
+  ],
+  "d5c2d1760dba11ecb1e81171463288e9": [
+    {
+      "id": "30074120",
+      "score": 10.086624145507812,
+      "rank": 1,
+      "source": "colembed_maxsim",
+      "model_ref": "/home/seono/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    }
+  ]
+}

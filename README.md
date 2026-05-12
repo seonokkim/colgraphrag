@@ -31,7 +31,8 @@ export_webqa_slice.py   Phase 0  JSONL corpus slice
    inference.py         Phase 5  graph_to_str + LLM answer generation
         |                         + ColEmbed MaxSim retrieval
         |
-eval/evaluate_webqa_qa.py  Phase 6  QA-FL / QA-Acc / QA evaluation
+eval/evaluate_webqa_qa.py  Phase 6  WebQA QA-FL / QA-Acc / QA evaluation
+eval/evaluate_multimodal_qa.py   Phase 6  MMQA (delegates to evaluate_webqa_qa; same metrics)
 ```
 
 ---
@@ -98,6 +99,32 @@ Output location: `/workspace/data/webqa/WebQA_imgs_7z_chunks/webqa_shard14_toy/w
 ---
 
 ## Models
+
+Repos list checkpoints in **`config/model.yaml`**. Easiest layout is under **`models/`** at the project root (`models/mllm/…`, `models/retriever/…`, `models/eval/…`).
+
+### Batch download (`util/download_models.py`)
+
+Reads repo IDs from `config/model.yaml` and pulls snapshots with **`huggingface_hub.snapshot_download`** (supports resume). Put **`HF_TOKEN`** (or **`HUGGING_FACE_HUB_TOKEN`**) and optional **`HF_USERNAME`** in repo-root **`.env`** ([`.env.example`](.env.example)) so gated Gemma access works.
+
+```bash
+# From repo root, venv activated
+pip install huggingface_hub python-dotenv pyyaml    # lightweight; otherwise use `pip install -r requirements.txt`
+python util/download_models.py                       # Gemma + ColEmbed + BART (fluency)
+python util/download_models.py --only gemma colembed
+python util/download_models.py --dry-run           # print planned dirs only
+```
+
+Default output directories (mirror `model.yaml` paths):
+
+| Component | Repo id | Local directory |
+|-----------|---------|-----------------|
+| Gemma | `google/gemma-4-E4B-it` | `models/mllm/gemma-4-E4B-it` |
+| ColEmbed | `nvidia/llama-nemotron-colembed-vl-3b-v2` | `models/retriever/llama-nemotron-colembed-vl-3b-v2` |
+| Fluency | `facebook/bart-large-cnn` | `models/eval/bart-large-cnn` |
+
+The optional fluency checkpoint is also preloaded via **`python scripts/preload_fluency_model.py`** (see **[BART (Fluency Evaluation)](#bart-fluency-evaluation)** below).
+
+Alternatively, install each checkpoint manually with **`huggingface-cli`** or **`snapshot_download`** as shown below.
 
 ### ColEmbed VL (Image Retrieval)
 
@@ -245,7 +272,8 @@ colgraphrag_webqa/
         webqa_metrics_approx.py   # QA-Acc approximation
         webqa_fluency.py    # BARTScore fluency
     eval/
-        evaluate_webqa_qa.py      # QA-FL / QA-Acc / QA evaluation
+        evaluate_webqa_qa.py       # WebQA Phase 6 QA-FL / QA-Acc / QA
+        evaluate_multimodal_qa.py  # MMQA Phase 6 entry (delegates to evaluate_webqa_qa)
         evaluate_retrieval.py     # Retrieval IR metrics
     scripts/
         run_full_pipeline.py      # Run all queries (default 66)

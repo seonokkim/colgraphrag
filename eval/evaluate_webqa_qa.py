@@ -3,6 +3,8 @@ WebQA QA evaluation: list EM / list F1 for Unimodal, Multimodal, and All.
 
 Scoring uses `eval/webqa_qa_scoring.py` (self-contained).
 Gold lines come from `export_webqa_slice.py` (`webqa_questions.jsonl` with `answers` + metadata.webqa).
+
+MMQA pipelines call the thin wrapper `evaluate_multimodal_qa.py`, which delegates here unchanged.
 """
 
 from __future__ import annotations
@@ -72,6 +74,10 @@ def _stratum_for_example(ex: dict[str, Any]) -> str:
         return w["webqa_stratum"]
     if isinstance(w.get("multimodal"), bool):
         return "Multimodal" if w["multimodal"] else "Unimodal"
+    # MultiModalQA export: metadata.modalities is a list of involved modalities.
+    mods = md.get("modalities")
+    if isinstance(mods, list) and mods:
+        return "Multimodal" if len(mods) > 1 else "Unimodal"
     return "Unimodal"
 
 
@@ -79,7 +85,12 @@ def _qcate_for_example(ex: dict[str, Any]) -> str:
     md = ex.get("metadata") or {}
     w = md.get("webqa") or {}
     q = w.get("Qcate") or ex.get("Qcate")
-    return str(q) if isinstance(q, str) and q else "text"
+    if isinstance(q, str) and q:
+        return str(q)
+    mt = md.get("type")
+    if isinstance(mt, str) and mt:
+        return mt
+    return "text"
 
 
 def _build_gold_and_types(
@@ -257,7 +268,11 @@ def _resolve_retrieval_rankings(rankings_json: Path | None, run_id: str) -> Path
     if not run_id:
         return None
     base = _REPO_ROOT / "result" / run_id
-    for name in ("retrieval_rankings.json", "phase5_retrieval_rankings.json"):
+    for name in (
+        "phase5_inference/predictions_retrieval.json",
+        "retrieval_rankings.json",
+        "phase5_retrieval_rankings.json",
+    ):
         candidate = base / name
         if candidate.is_file():
             return candidate
@@ -370,6 +385,21 @@ def _git_commit() -> str | None:
     return None
 
 
+def _metric_log_prefix(args: argparse.Namespace) -> str:
+    """Banner label for stdout lines (MMQA runs reuse this script with WebQA-style metrics)."""
+    manual = getattr(args, "metric_log_prefix", None)
+    if manual and str(manual).strip():
+        return str(manual).strip()
+    ds = os.getenv("MMGRAPHRAG_DATASET", "").strip().lower()
+    if ds == "mmqa":
+        return "MMQA"
+    gold = str(args.gold_jsonl).lower()
+    split_l = (args.split_label or "").lower()
+    if "mmqa" in gold or "multimodalqa" in gold or split_l.startswith("mmqa"):
+        return "MMQA"
+    return "WebQA"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="WebQA list EM/F1 with Unimodal / Multimodal / All buckets."
@@ -383,6 +413,17 @@ def main() -> None:
         help="Default: result/json/<run_id>_webqa_qa_eval_report.json if MMGRAPHRAG_RUN_ID set",
     )
     parser.add_argument("--split_label", type=str, default="test")
+    parser.add_argument(
+        "--metric-log-prefix",
+        type=str,
+        default=None,
+        dest="metric_log_prefix",
+        metavar="LABEL",
+        help=(
+            "Prefix for acc_approx / leaderboard stdout lines (default: MMQA if gold path or "
+            "--split_label looks like MMQA, else WebQA)."
+        ),
+    )
     parser.add_argument(
         "--retrieval_rankings_json",
         type=Path,
@@ -407,6 +448,7 @@ def main() -> None:
         help="k the answer generator actually consumes; echoed in retrieval_summary.",
     )
     args = parser.parse_args()
+    log_pfx = _metric_log_prefix(args)
 
     if not args.predictions.is_file():
         raise SystemExit(f"Missing predictions: {args.predictions}")
@@ -707,13 +749,13 @@ def main() -> None:
         f"{scores['Multimodal']['list_em_keyword']:.4f}"
     )
     print(
-        "WebQA acc_approx  "
+        f"{log_pfx} acc_approx  "
         f"All: {scores['All']['webqa_acc_approx']:.4f} | "
         f"Unimodal: {scores['Unimodal']['webqa_acc_approx']:.4f} | "
         f"Multimodal: {scores['Multimodal']['webqa_acc_approx']:.4f}"
     )
     print(
-        "WebQA leaderboard  QA-FL / QA-Acc / QA  (ACL-25 paper Table 2)  "
+        f"{log_pfx} leaderboard  QA-FL / QA-Acc / QA  (ACL-25 paper Table 2)  "
         f"All: {scores['All']['qa_fl']:.4f} / {scores['All']['qa_acc']:.4f} / {scores['All']['qa']:.4f} | "
         f"Unimodal: {scores['Unimodal']['qa_fl']:.4f} / {scores['Unimodal']['qa_acc']:.4f} / {scores['Unimodal']['qa']:.4f} | "
         f"Multimodal: {scores['Multimodal']['qa_fl']:.4f} / {scores['Multimodal']['qa_acc']:.4f} / {scores['Multimodal']['qa']:.4f}"
@@ -727,12 +769,12 @@ def main() -> None:
         per_cat = " | ".join(
             f"{c}={v:.2f}" for c, v in scores["by_Qcate_webqa_acc_approx"].items()
         )
-        print(f"WebQA acc_approx by Qcate: {per_cat}")
+        print(f"{log_pfx} acc_approx by Qcate: {per_cat}")
     if scores.get("by_Qcate_webqa_qa"):
         per_cat_qa = " | ".join(
             f"{c}={v:.2f}" for c, v in scores["by_Qcate_webqa_qa"].items()
         )
-        print(f"WebQA QA by Qcate: {per_cat_qa}")
+        print(f"{log_pfx} QA by Qcate: {per_cat_qa}")
     if scores.get("by_Qcate_list_em_keyword"):
         per_cat_em = " | ".join(
             f"{c}={v:.2f}" for c, v in scores["by_Qcate_list_em_keyword"].items()

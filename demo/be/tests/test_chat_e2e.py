@@ -181,6 +181,19 @@ class TestChatEndpoint:
         fact_types = {f["fact_type"] for f in data["gold_facts"]}
         print(f"\n  Gold facts: {len(data['gold_facts'])} ({', '.join(fact_types)})")
 
+    def test_chat_accepts_mmqa_when_configured(self, client: httpx.Client):
+        """When MMQA is loaded, chat accepts ``dataset: mmqa`` (same schema as WebQA)."""
+        ds = client.get("/api/datasets").json()
+        mmqa = next((d for d in ds["datasets"] if d["key"] == "mmqa"), None)
+        if not mmqa or not mmqa.get("available"):
+            pytest.skip("MMQA not available on this server")
+        resp = client.post("/api/chat", json={"question": "hello", "dataset": "mmqa"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "answer" in data
+        assert "sources" in data
+        assert "elapsed_ms" in data
+
 
 class TestChatEdgeCases:
     """Edge case tests."""

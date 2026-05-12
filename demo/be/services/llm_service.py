@@ -1,20 +1,28 @@
-"""Service for live LLM inference using Gemma 4 E4B IT."""
+"""LLM services for live inference in the demo backend.
+
+Self-contained — no imports from the repo-level mllm/ package.
+
+Three LLM backends:
+  - LLMService            : HuggingFace Gemma 4 E4B IT (local weights)
+  - OllamaLLMService      : Ollama gemma4:e2b (``OLLAMA_GEMMA4_E2B_MODEL``)
+  - OllamaE4BLLMService   : Ollama gemma4:e4b (``OLLAMA_GEMMA4_E4B_MODEL``)
+"""
 
 from __future__ import annotations
 
 import logging
 import os
-import sys
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import networkx as nx
 
 logger = logging.getLogger(__name__)
 
-_PIPELINE_ROOT = Path(__file__).resolve().parents[3]
-if str(_PIPELINE_ROOT) not in sys.path:
-    sys.path.insert(0, str(_PIPELINE_ROOT))
+_DEMO_BE_DIR = Path(__file__).resolve().parents[1]   # demo/be/
+_REPO_ROOT   = Path(__file__).resolve().parents[3]   # repo root
+
+# ── Prompt templates (shared) ────────────────────────────────────────────────
 
 DIRECT_QA_PROMPT = r'''Goal
 Answer the question. Provide a complete, self-contained answer sentence.
@@ -76,113 +84,222 @@ Output:'''
 def graph_to_str(graph: nx.Graph) -> str:
     """Convert a networkx graph to LLM-readable text blocks."""
     output = []
-    text_nodes = []
-    image_nodes = []
-    table_nodes = []
+    text_nodes: List[Dict] = []
+    image_nodes: List[Dict] = []
+    table_nodes: List[Dict] = []
 
     for node_id, node_data in graph.nodes(data=True):
-        node_info = {
-            'id': node_id,
-            'name': node_data.get('entity_name', ''),
-            'type': node_data.get('type', ''),
-            'description': node_data.get('description', ''),
+        info = {
+            "id": node_id,
+            "name": node_data.get("entity_name", ""),
+            "type": node_data.get("type", ""),
+            "description": node_data.get("description", ""),
         }
-        if node_id.endswith('IMAGE'):
-            image_nodes.append(node_info)
-        elif node_id.endswith('TABLE'):
-            table_nodes.append(node_info)
+        if node_id.endswith("IMAGE"):
+            image_nodes.append(info)
+        elif node_id.endswith("TABLE"):
+            table_nodes.append(info)
         else:
-            text_nodes.append(node_info)
+            text_nodes.append(info)
 
     output.append("======= BEGIN: TEXT NODES BLOCK =======")
-    for node in text_nodes:
-        if node['name'] and node['type']:
-            output.append(f"Name: {node['name']}")
-            output.append(f"Type: {node['type']}")
-            output.append(f"Description: {node['description']}")
-            output.append("---")
-    output.append("======= END: TEXT NODES BLOCK =======")
-    output.append("")
+    for n in text_nodes:
+        if n["name"] and n["type"]:
+            output += [f"Name: {n['name']}", f"Type: {n['type']}", f"Description: {n['description']}", "---"]
+    output.append("======= END: TEXT NODES BLOCK =======\n")
 
     output.append("======= BEGIN: IMAGE NODES BLOCK =======")
-    for node in image_nodes:
-        if node['name']:
-            output.append(f"Name: {node['name']}")
-            output.append("Type: image")
-            output.append(f"Description: {node['description']}")
-            output.append("---")
-    output.append("======= END: IMAGE NODES BLOCK =======")
-    output.append("")
+    for n in image_nodes:
+        if n["name"]:
+            output += [f"Name: {n['name']}", "Type: image", f"Description: {n['description']}", "---"]
+    output.append("======= END: IMAGE NODES BLOCK =======\n")
 
     output.append("======= BEGIN: TABLE NODES BLOCK =======")
-    for node in table_nodes:
-        if node['name']:
-            output.append(f"Name: {node['name']}")
-            output.append("Type: table")
-            output.append(f"Description: {node['description']}")
-            output.append("---")
-    output.append("======= END: TABLE NODES BLOCK =======")
-    output.append("")
+    for n in table_nodes:
+        if n["name"]:
+            output += [f"Name: {n['name']}", "Type: table", f"Description: {n['description']}", "---"]
+    output.append("======= END: TABLE NODES BLOCK =======\n")
 
     output.append("======= BEGIN: RELATIONSHIPS BLOCK =======")
-    for edge in graph.edges(data=True):
-        source_node = graph.nodes[edge[0]]
-        target_node = graph.nodes[edge[1]]
-        edge_data = edge[2]
-        if source_node.get('entity_name') and target_node.get('entity_name'):
-            output.append(f"Node 1 Name: {source_node['entity_name']}")
-            if source_node.get('type') and source_node.get('type') != 'unspecified':
-                output.append(f"Node 1 Type: {source_node['type']}")
-            output.append(f"Node 2 Name: {target_node['entity_name']}")
-            if target_node.get('type') and target_node.get('type') != 'unspecified':
-                output.append(f"Node 2 Type: {target_node['type']}")
-            if edge_data.get('description') and edge_data.get('description') != 'unspecified':
-                output.append(
-                    f"Relationship between Node 1 and Node 2: {edge_data['description']}"
-                )
+    for src, tgt, edata in graph.edges(data=True):
+        sn = graph.nodes[src]
+        tn = graph.nodes[tgt]
+        if sn.get("entity_name") and tn.get("entity_name"):
+            output.append(f"Node 1 Name: {sn['entity_name']}")
+            if sn.get("type") and sn["type"] != "unspecified":
+                output.append(f"Node 1 Type: {sn['type']}")
+            output.append(f"Node 2 Name: {tn['entity_name']}")
+            if tn.get("type") and tn["type"] != "unspecified":
+                output.append(f"Node 2 Type: {tn['type']}")
+            if edata.get("description") and edata["description"] != "unspecified":
+                output.append(f"Relationship between Node 1 and Node 2: {edata['description']}")
             output.append("----------")
     output.append("======= END: RELATIONSHIPS BLOCK =======")
 
-    return '\n'.join(output)
+    return "\n".join(output)
+
+
+def _build_prompt(question: str, graphs_dir: Path, qid: Optional[str], use_graph: bool) -> str:
+    graph_path = graphs_dir / f"{qid}_graph.graphml" if qid else None
+    if use_graph and graph_path is not None and graph_path.exists():
+        G = nx.read_graphml(graph_path)
+        return LLM_ANSWER_PROMPT.replace("{question}", question).replace("{GraphML}", graph_to_str(G))
+    return DIRECT_QA_PROMPT.replace("{question}", question)
+
+
+# ── HuggingFace Gemma 4 E4B ──────────────────────────────────────────────────
+
+_HF_ENV_MODEL_DIR = "GEMMA4_E4B_IT_MODEL_PATH"
+_HF_DEFAULT_MODEL_DIR = _REPO_ROOT / "models" / "mllm" / "gemma-4-E4B-it"
+
+# module-level cache (one process loads the model once)
+_hf_model: Any = None
+_hf_processor: Any = None
+_hf_model_root: Optional[str] = None
+
+
+def _resolve_hf_model_dir() -> Path:
+    env = os.environ.get(_HF_ENV_MODEL_DIR, "").strip()
+    if env:
+        p = Path(env).expanduser().resolve()
+        if not p.is_dir():
+            raise FileNotFoundError(f"{_HF_ENV_MODEL_DIR} is set but not a directory: {p}")
+        return p
+    if _HF_DEFAULT_MODEL_DIR.is_dir():
+        return _HF_DEFAULT_MODEL_DIR
+    raise FileNotFoundError(
+        f"Gemma 4 E4B IT weights not found at {_HF_DEFAULT_MODEL_DIR}. "
+        f"Set {_HF_ENV_MODEL_DIR} or run util/download_models.py --only gemma."
+    )
+
+
+def _hf_configured() -> bool:
+    try:
+        _resolve_hf_model_dir()
+        return True
+    except FileNotFoundError:
+        return False
+
+
+def _load_hf() -> Tuple[Any, Any]:
+    global _hf_model, _hf_processor, _hf_model_root
+    root = _resolve_hf_model_dir()
+    root_str = str(root)
+    if _hf_model_root == root_str and _hf_model is not None:
+        return _hf_model, _hf_processor
+
+    import torch
+    from transformers import AutoModelForMultimodalLM, AutoProcessor
+
+    _allow_cpu = os.getenv("GEMMA4_ALLOW_CPU", "0").strip().lower() in ("1", "true", "yes")
+    if not torch.cuda.is_available() and not _allow_cpu:
+        raise RuntimeError("CUDA GPU required to load Gemma 4 E4B IT.")
+
+    _dt = os.getenv("GEMMA4_E4B_IT_TORCH_DTYPE", "").strip().lower()
+    dtype = {"fp32": torch.float32, "float32": torch.float32,
+             "fp16": torch.float16, "float16": torch.float16,
+             "bf16": torch.bfloat16, "bfloat16": torch.bfloat16}.get(_dt, torch.float32)
+
+    _attn = os.getenv("GEMMA4_ATTN_IMPLEMENTATION", "eager").strip()
+    logger.info("Loading HF Gemma 4 E4B IT from %s (dtype=%s)", root, dtype)
+
+    processor = AutoProcessor.from_pretrained(str(root), trust_remote_code=True)
+    kwargs: Dict[str, Any] = {"dtype": dtype, "trust_remote_code": True, "attn_implementation": _attn}
+    if torch.cuda.is_available():
+        kwargs["device_map"] = {"": "cuda:0"}
+    model = AutoModelForMultimodalLM.from_pretrained(str(root), **kwargs)
+
+    _hf_model, _hf_processor, _hf_model_root = model, processor, root_str
+    return model, processor
+
+
+def _hf_generate(prompt: str, max_new_tokens: int = 512) -> str:
+    import torch
+
+    model, processor = _load_hf()
+    messages = [{"role": "user", "content": [{"type": "text", "text": prompt}]}]
+    inputs = processor.apply_chat_template(
+        messages, tokenize=True, add_generation_prompt=True,
+        return_dict=True, return_tensors="pt",
+    )
+    dev = next(model.parameters()).device
+    inputs = inputs.to(dev)
+    input_len = int(inputs["input_ids"].shape[-1])
+    with torch.no_grad():
+        out_ids = model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False)
+    row = out_ids[0][input_len:]
+    response = processor.decode(row, skip_special_tokens=False)
+    if hasattr(processor, "parse_response"):
+        parsed = processor.parse_response(response)
+        if isinstance(parsed, dict) and "content" in parsed:
+            return str(parsed["content"])
+    return response
 
 
 class LLMService:
-    """Manages Gemma 4 E4B IT model for live inference."""
+    """HuggingFace Gemma 4 E4B IT — live inference service."""
 
     def __init__(self, graphs_dir: Path) -> None:
         self._graphs_dir = graphs_dir
-        self._gemma_module: Any = None
-        self._loaded = False
-
-    def _load_gemma(self) -> Any:
-        """Lazy-load the Gemma module."""
-        if self._gemma_module is not None:
-            return self._gemma_module
-        try:
-            from mllm import hf_gemma_4_e4b_it as gemma_module
-            if gemma_module.configured():
-                self._gemma_module = gemma_module
-                logger.info(
-                    "Gemma 4 E4B IT loaded from: %s",
-                    gemma_module.resolve_model_dir(),
-                )
-                self._loaded = True
-                return gemma_module
-            else:
-                logger.warning("Gemma 4 E4B IT not configured (model dir not found)")
-        except ImportError as e:
-            logger.warning("Could not import mllm.hf_gemma_4_e4b_it: %s", e)
-        return None
 
     @property
     def available(self) -> bool:
-        """Check if LLM is available without loading it."""
-        if self._loaded:
-            return True
+        return _hf_configured()
+
+    def generate_answer(
+        self,
+        question: str,
+        qid: Optional[str] = None,
+        use_graph: bool = True,
+    ) -> Optional[str]:
+        if not self.available:
+            return None
         try:
-            from mllm import hf_gemma_4_e4b_it as gemma_module
-            return gemma_module.configured()
-        except ImportError:
+            prompt = _build_prompt(question, self._graphs_dir, qid, use_graph)
+            answer = _hf_generate(prompt)
+            return answer.strip() or None
+        except Exception as exc:
+            logger.warning("HF LLM generation failed: %s", exc)
+            return None
+
+
+# ── Ollama (gemma4:e2b / gemma4:e4b) ──────────────────────────────────────────
+
+_OLLAMA_ENV_MODEL = "OLLAMA_GEMMA4_E2B_MODEL"
+_OLLAMA_DEFAULT_MODEL = "gemma4:e2b"
+
+_OLLAMA_E4B_ENV_MODEL = "OLLAMA_GEMMA4_E4B_MODEL"
+_OLLAMA_E4B_DEFAULT_MODEL = "gemma4:e4b"
+
+
+class _OllamaBackedLLMService:
+    """Shared Ollama chat client; subclasses pick env key + default tag."""
+
+    def __init__(
+        self,
+        graphs_dir: Path,
+        *,
+        env_model_var: str,
+        default_model_tag: str,
+    ) -> None:
+        self._graphs_dir = graphs_dir
+        self._env_model_var = env_model_var
+        self._default_model_tag = default_model_tag
+
+    def _model_tag(self) -> str:
+        return os.getenv(self._env_model_var, "").strip() or self._default_model_tag
+
+    @property
+    def available(self) -> bool:
+        try:
+            from ollama import Client
+
+            cli = Client()
+            lst = cli.list()
+            models = lst.models if lst else []
+            name = self._model_tag()
+            return any(getattr(x, "model", None) == name for x in models)
+        except Exception:
             return False
 
     def generate_answer(
@@ -191,27 +308,40 @@ class LLMService:
         qid: Optional[str] = None,
         use_graph: bool = True,
     ) -> Optional[str]:
-        """
-        Generate an answer for the given question.
-        
-        Args:
-            question: The user's question text.
-            qid: Question ID to look up the graph for.
-            use_graph: Whether to use the graph context. Set False when the
-                       question doesn't meaningfully match the graph content.
-        """
-        gemma = self._load_gemma()
-        if gemma is None:
+        try:
+            prompt = _build_prompt(question, self._graphs_dir, qid, use_graph)
+            from ollama import Client
+
+            cli = Client()
+            out = cli.chat(
+                model=self._model_tag(),
+                messages=[{"role": "user", "content": prompt}],
+                stream=False,
+            )
+            answer = (out.message.content or "").strip()
+            return answer or None
+        except Exception as exc:
+            logger.warning("Ollama LLM generation failed (%s): %s", self._model_tag(), exc)
             return None
 
-        graph_path = self._graphs_dir / f"{qid}_graph.graphml" if qid else None
-        if use_graph and graph_path is not None and graph_path.exists():
-            G = nx.read_graphml(graph_path)
-            prompt = LLM_ANSWER_PROMPT.replace("{question}", question).replace(
-                "{GraphML}", graph_to_str(G)
-            )
-        else:
-            prompt = DIRECT_QA_PROMPT.replace("{question}", question)
 
-        answer = gemma.generate_text(prompt, max_new_tokens=512)
-        return (answer or "").strip() or None
+class OllamaLLMService(_OllamaBackedLLMService):
+    """Ollama gemma4:e2b — live inference service."""
+
+    def __init__(self, graphs_dir: Path) -> None:
+        super().__init__(
+            graphs_dir,
+            env_model_var=_OLLAMA_ENV_MODEL,
+            default_model_tag=_OLLAMA_DEFAULT_MODEL,
+        )
+
+
+class OllamaE4BLLMService(_OllamaBackedLLMService):
+    """Ollama gemma4:e4b — live inference service."""
+
+    def __init__(self, graphs_dir: Path) -> None:
+        super().__init__(
+            graphs_dir,
+            env_model_var=_OLLAMA_E4B_ENV_MODEL,
+            default_model_tag=_OLLAMA_E4B_DEFAULT_MODEL,
+        )

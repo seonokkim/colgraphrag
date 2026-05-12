@@ -1,0 +1,42 @@
+{
+  "response": "[\"ENTITY\",\"ATTRIBUTE\"]##ENTITY <|> related_to <|> ATTRIBUTE<|COMPLETE|>",
+  "question": {
+    "Guid": "d5bcce700dba11ecb1e81171463288e9",
+    "Q": "Do the horses in Toyotomi Hideyoshi on his horse with his unique helmet and the digitally retouched photograph of a Tang dynasty painting of two prized horses and one rider both show dark horses with white fur above each hoof ?",
+    "A": [
+      "The horses in Toyotomi Hideyoshi on his horse with his unique helmet and the digitally retouched photograph of a Tang dynasty painting of two prized horses and one rider both show dark horses with white fur above each hoof."
+    ],
+    "Keywords_A": "yes",
+    "Qcate": "YesNo",
+    "split": "val",
+    "img_posFacts": [
+      {
+        "image_id": "30071638",
+        "title": "WebQA image 30071638",
+        "caption": "",
+        "url": "data/webqa/WebQA_imgs_7z_chunks/imgs/all_png/shard_00014/00071638_30071638.png"
+      }
+    ],
+    "txt_posFacts": [
+      {
+        "snippet_id": "d5bcce700dba11ecb1e81171463288e9_txt",
+        "fact": "yes"
+      }
+    ],
+    "metadata": {
+      "image_doc_ids": [
+        "30071638"
+      ],
+      "text_doc_ids": [
+        "d5bcce700dba11ecb1e81171463288e9_txt"
+      ]
+    }
+  },
+  "dry_run": true,
+  "created_at": "2026-05-11T13:38:58.370000",
+  "llm": {
+    "tier": "dry-run",
+    "model": "(none)",
+    "base_url": "(none)"
+  }
+}

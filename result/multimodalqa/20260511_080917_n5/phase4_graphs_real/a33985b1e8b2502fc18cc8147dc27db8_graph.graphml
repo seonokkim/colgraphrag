@@ -1,0 +1,119 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d8" for="edge" attr.name="weight" attr.type="long" />
+  <key id="d7" for="edge" attr.name="entity_name" attr.type="string" />
+  <key id="d6" for="edge" attr.name="source_id" attr.type="string" />
+  <key id="d5" for="edge" attr.name="description" attr.type="string" />
+  <key id="d4" for="edge" attr.name="weight" attr.type="double" />
+  <key id="d3" for="node" attr.name="source_id" attr.type="string" />
+  <key id="d2" for="node" attr.name="description" attr.type="string" />
+  <key id="d1" for="node" attr.name="type" attr.type="string" />
+  <key id="d0" for="node" attr.name="entity_name" attr.type="string" />
+  <graph edgedefault="undirected">
+    <node id="THOMAS PETER SHADYAC Bt: PERSON">
+      <data key="d0">Thomas Peter Shadyac</data>
+      <data key="d1">Person</data>
+      <data key="d2">American director, screenwriter, producer, and author</data>
+      <data key="d3">a33985b1e8b2502fc18cc8147dc27db8_aead4258a97326ae15999e86d3a8aca1, a33985b1e8b2502fc18cc8147dc27db8_6319f60b0a581f4aa4c74183fdf2f6fb</data>
+    </node>
+    <node id="BOB HOPE Bt: PERSON">
+      <data key="d0">Bob Hope</data>
+      <data key="d1">Person</data>
+      <data key="d2">Comedian</data>
+      <data key="d3">a33985b1e8b2502fc18cc8147dc27db8_aead4258a97326ae15999e86d3a8aca1, a33985b1e8b2502fc18cc8147dc27db8_6319f60b0a581f4aa4c74183fdf2f6fb</data>
+    </node>
+    <node id="THE NUTTY PROFESSOR Bt: FILM">
+      <data key="d0">The Nutty Professor</data>
+      <data key="d1">Film</data>
+      <data key="d2">Comedy film</data>
+      <data key="d3">a33985b1e8b2502fc18cc8147dc27db8_aead4258a97326ae15999e86d3a8aca1, a33985b1e8b2502fc18cc8147dc27db8_6319f60b0a581f4aa4c74183fdf2f6fb</data>
+    </node>
+    <node id="LIAR LIAR Bt: FILM">
+      <data key="d0">Liar Liar</data>
+      <data key="d1">Film</data>
+      <data key="d2">Comedy film</data>
+      <data key="d3">a33985b1e8b2502fc18cc8147dc27db8_aead4258a97326ae15999e86d3a8aca1, a33985b1e8b2502fc18cc8147dc27db8_6319f60b0a581f4aa4c74183fdf2f6fb</data>
+    </node>
+    <node id="PATCH ADAMS Bt: FILM">
+      <data key="d0">Patch Adams</data>
+      <data key="d1">Film</data>
+      <data key="d2">Comedy film</data>
+      <data key="d3">a33985b1e8b2502fc18cc8147dc27db8_aead4258a97326ae15999e86d3a8aca1, a33985b1e8b2502fc18cc8147dc27db8_6319f60b0a581f4aa4c74183fdf2f6fb</data>
+    </node>
+    <node id="BRUCE ALMIGHTY Bt: FILM">
+      <data key="d0">Bruce Almighty</data>
+      <data key="d1">Film</data>
+      <data key="d2">Comedy film</data>
+      <data key="d3">a33985b1e8b2502fc18cc8147dc27db8_aead4258a97326ae15999e86d3a8aca1, a33985b1e8b2502fc18cc8147dc27db8_6319f60b0a581f4aa4c74183fdf2f6fb</data>
+    </node>
+    <node id="I AM Bt: FILM">
+      <data key="d0">I Am</data>
+      <data key="d1">Film</data>
+      <data key="d2">Documentary film</data>
+      <data key="d3">a33985b1e8b2502fc18cc8147dc27db8_aead4258a97326ae15999e86d3a8aca1, a33985b1e8b2502fc18cc8147dc27db8_6319f60b0a581f4aa4c74183fdf2f6fb</data>
+    </node>
+    <node id="JOSÉ TERRÓN PEÑARANDA Bt: PERSON">
+      <data key="d0">José Terrón Peñaranda</data>
+      <data key="d1">Person</data>
+      <data key="d2">Spanish film actor</data>
+      <data key="d3">a33985b1e8b2502fc18cc8147dc27db8_aead4258a97326ae15999e86d3a8aca1, a33985b1e8b2502fc18cc8147dc27db8_6319f60b0a581f4aa4c74183fdf2f6fb</data>
+    </node>
+    <node id="FOR A FEW DOLLARS MORE Bt: FILM">
+      <data key="d0">For a Few Dollars More</data>
+      <data key="d1">Film</data>
+      <data key="d2">Film</data>
+      <data key="d3">a33985b1e8b2502fc18cc8147dc27db8_aead4258a97326ae15999e86d3a8aca1, a33985b1e8b2502fc18cc8147dc27db8_6319f60b0a581f4aa4c74183fdf2f6fb</data>
+    </node>
+    <node id="THE GOOD, THE BAD AND THE UGLY Bt: FILM">
+      <data key="d0">The Good, the Bad and the Ugly</data>
+      <data key="d1">Film</data>
+      <data key="d2">Film</data>
+      <data key="d3">a33985b1e8b2502fc18cc8147dc27db8_aead4258a97326ae15999e86d3a8aca1, a33985b1e8b2502fc18cc8147dc27db8_6319f60b0a581f4aa4c74183fdf2f6fb</data>
+    </node>
+    <node id="BEN PIAZZA Bt: ">
+      <data key="d0">Ben Piazza</data>
+      <data key="d1" />
+      <data key="d2" />
+      <data key="d3">8513db80c11ea439ab11eba406ec00d9</data>
+    </node>
+    <node id="BEN PIAZZA FILMOGRAPHY Bt: TABLE">
+      <data key="d0">Ben Piazza Filmography</data>
+      <data key="d1">TABLE</data>
+      <data key="d2">| Year | Title | Role | Notes |
+|---|---|---|---|
+| 1957 | A Dangerous Age | David |  |
+| 1959 | The Hanging Tree | Rune |  |
+| 1962 | No Exit | Camarero |  |
+| 1970 | Tell Me That You Love Me, Junie Moon | Jesse |  |
+| 1972 | The Outside Man | Desk Clerk |  |
+| 1973 | The Candy Snatchers | Avery |  |
+| 1976 | The Bad News Bears | Bob Whitewood |  |
+| 1977 | I Never Promised You a Rose Garden | Jay Blake |  |
+| 1979 | Nightwing | Roger Piggott |  |
+| 1979 | The Concorde ... Airport '79 | Associate | TV version, Uncredited |
+| 1980 | The Blues Brothers | Father |  |
+| 1982 | Waltz Across Texas | Bill Wrather |  |
+| 1985 | Mask | Mr. Simms |  |
+| 1988 | Clean and Sober | Kramer |  |
+| 1990 | Rocky V | Doctor | Uncredited |
+| 1991 | Guilty by Suspicion | Darryl Zanuck |  |</data>
+      <data key="d3">8513db80c11ea439ab11eba406ec00d9</data>
+    </node>
+    <edge source="JOSÉ TERRÓN PEÑARANDA Bt: PERSON" target="FOR A FEW DOLLARS MORE Bt: FILM">
+      <data key="d4">2.0</data>
+      <data key="d5">played role in</data>
+      <data key="d6">a33985b1e8b2502fc18cc8147dc27db8_aead4258a97326ae15999e86d3a8aca1, a33985b1e8b2502fc18cc8147dc27db8_6319f60b0a581f4aa4c74183fdf2f6fb</data>
+    </edge>
+    <edge source="JOSÉ TERRÓN PEÑARANDA Bt: PERSON" target="THE GOOD, THE BAD AND THE UGLY Bt: FILM">
+      <data key="d4">2.0</data>
+      <data key="d5">played role in</data>
+      <data key="d6">a33985b1e8b2502fc18cc8147dc27db8_aead4258a97326ae15999e86d3a8aca1, a33985b1e8b2502fc18cc8147dc27db8_6319f60b0a581f4aa4c74183fdf2f6fb</data>
+    </edge>
+    <edge source="BEN PIAZZA Bt: " target="BEN PIAZZA FILMOGRAPHY Bt: TABLE">
+      <data key="d7">Ben Piazza Filmography</data>
+      <data key="d8">1</data>
+      <data key="d5">Ben Piazza Filmography table</data>
+      <data key="d6">8513db80c11ea439ab11eba406ec00d9</data>
+    </edge>
+  </graph>
+</graphml>

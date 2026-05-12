@@ -3,12 +3,14 @@ Local Hugging Face **Gemma 4 E4B IT** (``google/gemma-4-E4B-it``, image + text â
 
 Default checkpoint directory (override with ``GEMMA4_E4B_IT_MODEL_PATH``):
 
-1. ``<repo>/models/mllm/gemma-4-E4B-it`` (local-first, from ``util/download_models.py``)
-2. ``/workspace/models/mllm/gemma-4-e4b-it`` (workspace fallback)
-3. Windows: ``C:/workspace/models/mllm/gemma-4-e4b-it``
+``<repo>/models/mllm/gemma-4-E4B-it`` (from ``util/download_models.py --only gemma``).
 
-Requires: ``torch``, ``transformers`` (Gemma 4 / ``gemma4``), ``accelerate`` (recommended for
-``device_map="auto"``), ``pillow``, ``torchvision`` (per HF model card).
+Requires: CUDA GPU (set ``GEMMA4_ALLOW_CPU=1`` only for CPU debugging); ``torch``, ``transformers``
+(Gemma 4 / ``gemma4``), ``accelerate`` (recommended for ``device_map="auto"``),
+``pillow``, ``torchvision`` (per HF model card).
+
+Weight files must be a complete HF snapshot; a truncated ``*.safetensors`` causes ``SafetensorError``.
+Re-download with ``python util/download_models.py --only gemma`` if deserialization fails.
 """
 
 from __future__ import annotations
@@ -23,8 +25,6 @@ logger = logging.getLogger(__name__)
 _ENV_MODEL_DIR = "GEMMA4_E4B_IT_MODEL_PATH"
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _LOCAL_UNIX = _REPO_ROOT / "models" / "mllm" / "gemma-4-E4B-it"
-_DEFAULT_UNIX = Path("/workspace/models/mllm/gemma-4-e4b-it")
-_DEFAULT_WIN = Path(r"C:\workspace\models\mllm\gemma-4-e4b-it")
 _HF_REPO_ID = "google/gemma-4-E4B-it"
 
 _ModelProcessor = Tuple[Any, Any]
@@ -40,16 +40,8 @@ def configured(model_dir: Optional[Union[str, Path]] = None) -> bool:
 
 
 def _default_local_model_dir_for_os(os_name: str) -> Path:
-    """Testable branch: ``os_name`` is typically ``os.name`` (``nt`` vs ``posix``).
-    
-    Local-first: check <repo>/models/mllm/gemma-4-E4B-it before /workspace/...
-    """
-    if os_name == "nt":
-        return _DEFAULT_WIN
-    # Local-first for Unix
-    if _LOCAL_UNIX.is_dir():
-        return _LOCAL_UNIX
-    return _DEFAULT_UNIX
+    """Return ``<repo>/models/mllm/gemma-4-E4B-it`` (same layout as colgraphrag_webqa)."""
+    return _LOCAL_UNIX
 
 
 def default_local_model_dir() -> Path:
@@ -132,6 +124,18 @@ def load_gemma_4_e4b_it(
     from transformers import AutoModelForMultimodalLM, AutoProcessor
 
     root = resolve_model_dir(model_dir)
+    _allow_cpu = os.getenv("GEMMA4_ALLOW_CPU", "0").strip().lower() in ("1", "true", "yes")
+    if not torch.cuda.is_available():
+        if _allow_cpu:
+            logger.warning(
+                "Loading Gemma without CUDA (GEMMA4_ALLOW_CPU=1); set GEMMA4_ALLOW_CPU=0 on GPU machines."
+            )
+        else:
+            raise RuntimeError(
+                "CUDA GPU is required to load Gemma 4 E4B IT (torch.cuda.is_available() is False). "
+                "Run on a GPU environment with a working PyTorch+CUDA build, or set GEMMA4_ALLOW_CPU=1 "
+                "only for intentional CPU debugging."
+            )
     _dt = os.getenv("GEMMA4_E4B_IT_TORCH_DTYPE", "").strip().lower()
     if _dt in ("fp32", "float32", "f32"):
         dtype = torch.float32

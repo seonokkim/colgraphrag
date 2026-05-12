@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "run_id": "webqa/20260511_133856_q5_shard14",
+    "backend": "hf_gemma_4_e4b_it",
+    "model_path": "/home/seono/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it"
+  },
+  "qid_to_llm": {
+    "d5cb27900dba11ecb1e81171463288e9": {
+      "tier": "dry-run",
+      "model": "(none)",
+      "base_url": "(none)",
+      "reason": "graph-heuristic"
+    },
+    "d5ca85b00dba11ecb1e81171463288e9": {
+      "tier": "dry-run",
+      "model": "(none)",
+      "base_url": "(none)",
+      "reason": "graph-heuristic"
+    },
+    "d5c827980dba11ecb1e81171463288e9": {
+      "tier": "dry-run",
+      "model": "(none)",
+      "base_url": "(none)",
+      "reason": "graph-heuristic"
+    },
+    "d5c8f1780dba11ecb1e81171463288e9": {
+      "tier": "dry-run",
+      "model": "(none)",
+      "base_url": "(none)",
+      "reason": "graph-heuristic"
+    },
+    "d5c2d1760dba11ecb1e81171463288e9": {
+      "tier": "dry-run",
+      "model": "(none)",
+      "base_url": "(none)",
+      "reason": "graph-heuristic"
+    }
+  },
+  "summary": {
+    "by_tier": {
+      "dry-run": 5
+    },
+    "by_model": {
+      "(none)": 5
+    }
+  }
+}

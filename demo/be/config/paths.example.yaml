@@ -1,5 +1,6 @@
-# Demo backend — path template for colgraphrag_webqa.
-# Copy to paths.yaml and adjust. Paths below are relative to repo root unless absolute.
+# Demo backend — path template for ColGraphRAG.
+# Copy to paths.yaml for local overrides (paths.yaml may be gitignored).
+# When paths.yaml is absent, the backend falls back to this file automatically.
 #
 # Repo root = directory that contains data/, result/, models/, pattern.py, …
 # It is inferred as three levels above this file (demo/be/config → colgraphrag_webqa).
@@ -10,11 +11,11 @@ version: 1
 repo_root: ""
 
 run:
-  # Under <repo>/result/<run_id>/ — graphs, predictions, copied webqa_slice live here.
-  # Use "latest" to pick the subdirectory with the newest mtime (see resolve_demo_paths.py).
+  # WebQA run root — "latest" picks the newest subdir under result_root by mtime.
   run_id: "latest"
-  # If set, use this directory as the run root instead of result/<run_id>.
-  # Relative paths are resolved from repo_root.
+  # Where to scan for WebQA runs (relative to repo_root).
+  result_root: "result/webqa"
+  # Override: use this exact directory as the run root (relative or absolute).
   explicit_result_dir: ""
 
 webqa:
@@ -29,8 +30,19 @@ models:
   colembed: "models/retriever/llama-nemotron-colembed-vl-3b-v2"
   fluency_bart: "models/eval/bart-large-cnn"
 
-# Subdirs inside result/<run_id>/ (usually do not change)
+# Subdirs inside result/<run_id>/ (usually do not change).
+# Phase-4 graphs: ``construct.py`` defaults to ``phase4_graphs_real``; notebooks often set
+# ``phase4_graphs_out``. The demo BE accepts either when it finds ``*_graph.graphml`` files.
 result_layout:
   webqa_slice: "webqa_slice"
   phase4_graphs_out: "phase4_graphs_out"
   phase5_inference: "phase5_inference"
+
+mmqa:
+  # "latest": newest run under result_root that has phase5_inference/predictions.json
+  # (finished pipeline). If none, falls back to newest directory by mtime.
+  # Or set a fixed run id, e.g. "20260511_080917_n5"
+  run_id: "latest"
+  result_root: "result/multimodalqa"
+  slice_dir: "mmqa_slice"
+  imgs_dir: "data/multimodalqa/final_dataset_images"

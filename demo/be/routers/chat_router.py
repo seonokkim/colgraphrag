@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from difflib import SequenceMatcher
+from typing import Literal
 
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
@@ -15,6 +16,12 @@ router = APIRouter(prefix="/api", tags=["chat"])
 
 class ChatRequest(BaseModel):
     question: str
+    dataset: Literal["webqa", "mmqa"] = "webqa"
+    model: Literal[
+        "hf_gemma4_e4b",
+        "ollama_gemma4_e2b",
+        "ollama_gemma4_e4b",
+    ] = "hf_gemma4_e4b"
 
 
 class ChatResponse(BaseModel):
@@ -41,6 +48,31 @@ def _similarity(a: str, b: str) -> float:
     return 0.6 * jaccard + 0.4 * seq_ratio
 
 
+def _get_services(request: Request, dataset: str, model: str):
+    if dataset == "mmqa":
+        qs = getattr(request.app.state, "mmqa_question_service", None)
+        gs = getattr(request.app.state, "mmqa_graph_service", None)
+        if qs is not None:
+            if model == "ollama_gemma4_e2b":
+                ls = getattr(request.app.state, "mmqa_ollama_llm_service", None)
+            elif model == "ollama_gemma4_e4b":
+                ls = getattr(request.app.state, "mmqa_ollama_e4b_llm_service", None)
+            else:
+                ls = getattr(request.app.state, "mmqa_llm_service", None)
+            return qs, gs, ls
+    if model == "ollama_gemma4_e2b":
+        ls = getattr(request.app.state, "ollama_llm_service", None)
+    elif model == "ollama_gemma4_e4b":
+        ls = getattr(request.app.state, "ollama_e4b_llm_service", None)
+    else:
+        ls = getattr(request.app.state, "llm_service", None)
+    return (
+        getattr(request.app.state, "question_service", None),
+        getattr(request.app.state, "graph_service", None),
+        ls,
+    )
+
+
 @router.post("/chat", response_model=ChatResponse)
 async def chat(body: ChatRequest, request: Request) -> ChatResponse:
     """
@@ -52,9 +84,7 @@ async def chat(body: ChatRequest, request: Request) -> ChatResponse:
     3. Generate answer with Gemma using graph context (or direct QA if no graph)
     """
     start = time.perf_counter()
-    question_service = getattr(request.app.state, "question_service", None)
-    graph_service = getattr(request.app.state, "graph_service", None)
-    llm_service = getattr(request.app.state, "llm_service", None)
+    question_service, graph_service, llm_service = _get_services(request, body.dataset, body.model)
 
     if question_service is None:
         return ChatResponse(
@@ -75,7 +105,6 @@ async def chat(body: ChatRequest, request: Request) -> ChatResponse:
             elapsed_ms=(time.perf_counter() - start) * 1000,
         )
 
-    # Score all questions, separately track those with graphs
     best_score_all = 0.0
     best_qid_all = questions[0].qid
     best_score_graph = 0.0
@@ -90,7 +119,6 @@ async def chat(body: ChatRequest, request: Request) -> ChatResponse:
             best_score_graph = score
             best_qid_graph = q.qid
 
-    # Prefer graph-bearing question if similarity is high enough to be meaningful
     GRAPH_SIM_THRESHOLD = 0.25
     use_qid: str
     use_graph: bool
@@ -99,7 +127,7 @@ async def chat(body: ChatRequest, request: Request) -> ChatResponse:
         use_graph = True
     elif best_qid_graph and best_score_graph > 0.05:
         use_qid = best_qid_graph
-        use_graph = False  # low similarity -> don't force irrelevant graph context
+        use_graph = False
     else:
         use_qid = best_qid_all
         use_graph = False
@@ -114,7 +142,6 @@ async def chat(body: ChatRequest, request: Request) -> ChatResponse:
             elapsed_ms=(time.perf_counter() - start) * 1000,
         )
 
-    # Generate answer with Gemma
     answer_text: str | None = None
     if llm_service is not None:
         try:
@@ -136,7 +163,6 @@ async def chat(body: ChatRequest, request: Request) -> ChatResponse:
                 "GEMMA4_E4B_IT_TORCH_DTYPE=bf16."
             )
 
-    # Build graph response data (only when graph was used for answering)
     graph_data = None
     if use_graph and detail.graph_available and graph_service:
         try:

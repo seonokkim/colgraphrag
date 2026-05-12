@@ -7,7 +7,7 @@ version: 1
 webqa:
   # If set to a non-empty path, applied as WEBQA_DATA_ROOT only when that path exists
   # (so local bundle missing still falls back in default_webqa_data_root()).
-  # Leave empty to use only code defaults: <repo>/data/webqa, else /workspace/data/webqa.
+  # Leave empty to use code defaults: <repo>/data/webqa.
   data_root: ""
 
   # Optional explicit JSON paths (override defaults under data_root).
@@ -22,3 +22,11 @@ pattern:
 shard14_toy:
   webqa_slice: "data/webqa/webqa_shard14_toy/webqa_slice"
   shard14_png_dir: "data/webqa/WebQA_imgs_7z_chunks/imgs/all_png/shard_00014"
+
+# MultimodalQA toy-n100 dataset (dev split, 100 questions).
+# Switch pipeline mode: MMGRAPHRAG_DATASET=mmqa
+multimodalqa:
+  data_dir: "data/multimodalqa/dataset"
+  images_dir: "data/multimodalqa/final_dataset_images"
+  # Stats for dev-n100 toy bundle (for reference)
+  # questions: 100  tables: 30  texts: 925  images: 257

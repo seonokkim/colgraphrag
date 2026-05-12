@@ -1,0 +1,20 @@
+{
+  "qid": "d5cb27900dba11ecb1e81171463288e9",
+  "phase": "4_construct",
+  "upstream_extraction_caches": [
+    {
+      "text_doc_id": "d5cb27900dba11ecb1e81171463288e9_txt",
+      "tier": "dry-run",
+      "model": "(none)",
+      "base_url": "(none)"
+    }
+  ],
+  "summary": {
+    "by_model": {
+      "(none)": 1
+    },
+    "by_tier": {
+      "dry-run": 1
+    }
+  }
+}

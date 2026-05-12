@@ -1,0 +1,15 @@
+{
+  "response": "\"entity\"<|>\"\"<|>\"QUESTION\"<|>\"query entity\"##\"entity\"<|>\"Question: Are there any buildings shorter than the flag pole in 481 8th Ave , New York ? Answer: There are not any build\"<|>\"TEXT\"<|>\"context entity\"##\"relationship\"<|>\"\"<|>\"Question: Are there any buildings shorter than the flag pole in 481 8th Ave , New York ? Answer: There are not any build\"<|>\"related context\"",
+  "llm": {
+    "tier": "dry-run",
+    "model": "(none)",
+    "base_url": "(none)"
+  },
+  "qid": "d5c8f1780dba11ecb1e81171463288e9_d5c8f1780dba11ecb1e81171463288e9_txt",
+  "text_content": "Question: Are there any buildings shorter than the flag pole in 481 8th Ave , New York ? Answer: There are not any buildings shorter than the flag pole on 481 8th Ave, New York.",
+  "graph_pattern": {
+    "type_list": [],
+    "edge_list": [],
+    "question_text": ""
+  }
+}

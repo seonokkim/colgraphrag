@@ -1,0 +1,26 @@
+{
+  "qid": "0d8f2779137fb47db953c4af5247ffe5",
+  "phase": "4_construct",
+  "upstream_extraction_caches": [
+    {
+      "text_doc_id": "a5446f52cc5cf537acb89dfd4acede64",
+      "tier": "hf_gemma_4_e4b_it",
+      "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+      "base_url": "(in-process)"
+    },
+    {
+      "text_doc_id": "226fba350424f16022844be7f2ec7322",
+      "tier": "hf_gemma_4_e4b_it",
+      "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+      "base_url": "(in-process)"
+    }
+  ],
+  "summary": {
+    "by_model": {
+      "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it": 2
+    },
+    "by_tier": {
+      "hf_gemma_4_e4b_it": 2
+    }
+  }
+}

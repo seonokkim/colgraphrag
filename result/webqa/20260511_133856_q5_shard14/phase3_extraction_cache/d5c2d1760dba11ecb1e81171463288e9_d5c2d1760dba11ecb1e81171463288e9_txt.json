@@ -1,0 +1,15 @@
+{
+  "response": "\"entity\"<|>\"\"<|>\"QUESTION\"<|>\"query entity\"##\"entity\"<|>\"Question: Is the Cincinnati Music Hall have columns inside and outside ? Answer: The Cincinnati Music Hall has columns i\"<|>\"TEXT\"<|>\"context entity\"##\"relationship\"<|>\"\"<|>\"Question: Is the Cincinnati Music Hall have columns inside and outside ? Answer: The Cincinnati Music Hall has columns i\"<|>\"related context\"",
+  "llm": {
+    "tier": "dry-run",
+    "model": "(none)",
+    "base_url": "(none)"
+  },
+  "qid": "d5c2d1760dba11ecb1e81171463288e9_d5c2d1760dba11ecb1e81171463288e9_txt",
+  "text_content": "Question: Is the Cincinnati Music Hall have columns inside and outside ? Answer: The Cincinnati Music Hall has columns inside and outside.",
+  "graph_pattern": {
+    "type_list": [],
+    "edge_list": [],
+    "question_text": ""
+  }
+}

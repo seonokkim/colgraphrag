@@ -11,7 +11,7 @@ import networkx as nx
 import pandas as pd
 import urllib.parse
 
-from util.run_id import default_stamp
+from util.result_layout import resolve_pipeline_run_id
 
 record_delimiter = "##"
 tuple_delimiter = "<|>"
@@ -28,6 +28,25 @@ def _unpack_descriptions(data: Mapping) -> list[str]:
 def _unpack_source_ids(data: Mapping) -> list[str]:
     value = data.get("source_id", None)
     return [] if value is None else value.split(", ")
+def _canonical_doc_fragment(owner_qid: str, raw_key: Any) -> str:
+    """Strip `{owner_qid}_` prefix so graph `doc_id` matches MMQA gold doc ids."""
+    if isinstance(raw_key, str):
+        base = clean_str(raw_key)
+    else:
+        base = str(raw_key or "").strip()
+    if owner_qid and base.startswith(owner_qid + "_"):
+        return base[len(owner_qid) + 1 :].strip()
+    return base.strip()
+def _merge_doc_id_attr(existing: Any, new_fragment: str) -> str:
+    parts: set[str] = set()
+    if isinstance(existing, str) and existing.strip():
+        for p in existing.split(", "):
+            t = p.strip()
+            if t:
+                parts.add(t)
+    if new_fragment.strip():
+        parts.add(new_fragment.strip())
+    return ", ".join(sorted(parts))
 def load_jsonl_data(path):
     with open(path, "r", encoding='UTF-8') as file:
         return [json.loads(line) for line in file]
@@ -47,7 +66,7 @@ def table_to_markdown(table):
         markdown += "| " + " | ".join(cell['text'] for cell in row) + " |\n"
     return markdown.strip()
 
-def construct_graph(text_answers, table, question, texts, images):
+def construct_graph(text_answers, table, question, texts, images, owner_qid: str = ""):
     graph = nx.Graph()
 
     entity_dict = {}
@@ -88,6 +107,9 @@ def construct_graph(text_answers, table, question, texts, images):
                             str(source_doc_id),
                         })
                     )
+                    node["doc_id"] = _merge_doc_id_attr(
+                        node.get("doc_id"), _canonical_doc_fragment(owner_qid, source_doc_id)
+                    )
                 else:
                     entity_dict[entity_name_upper] = entity_type_upper
                     graph.add_node(
@@ -96,6 +118,7 @@ def construct_graph(text_answers, table, question, texts, images):
                         type=entity_type,
                         description=entity_description,
                         source_id=str(source_doc_id),
+                        doc_id=_canonical_doc_fragment(owner_qid, source_doc_id),
                     )
 
             if (
@@ -108,6 +131,7 @@ def construct_graph(text_answers, table, question, texts, images):
                 target_entity_name_upper = target_entity_name.upper()
                 edge_description = clean_str(record_attributes[3]).strip('"')
                 edge_source_id = clean_str(str(source_doc_id))
+                edge_doc_id = _canonical_doc_fragment(owner_qid, source_doc_id)
                 weight = 1.0
                 if source_entity_name_upper not in entity_dict:
                     entity_dict[source_entity_name_upper] = ""
@@ -119,6 +143,7 @@ def construct_graph(text_answers, table, question, texts, images):
                             type="",
                             description="",
                             source_id=edge_source_id,
+                            doc_id=edge_doc_id,
                         )
                 else:
                     source_entity_uuid = source_entity_name_upper + " Bt: " + entity_dict[source_entity_name_upper]
@@ -131,6 +156,7 @@ def construct_graph(text_answers, table, question, texts, images):
                         type="",
                         description="",
                         source_id=edge_source_id,
+                        doc_id=edge_doc_id,
                     )
                 else:
                     target_entity_uuid = target_entity_name_upper + " Bt: " + entity_dict[target_entity_name_upper]
@@ -152,12 +178,16 @@ def construct_graph(text_answers, table, question, texts, images):
                                 str(source_doc_id),
                             })
                         )
+                        edge_doc_id = _merge_doc_id_attr(
+                            edge_data.get("doc_id"), _canonical_doc_fragment(owner_qid, source_doc_id)
+                        )
                 graph.add_edge(
                     source_entity_uuid,
                     target_entity_uuid,
                     weight=weight,
                     description=edge_description,
                     source_id=edge_source_id,
+                    doc_id=edge_doc_id,
                 )
     if table is not None:
         markdown_table = table_to_markdown(table)
@@ -171,6 +201,7 @@ def construct_graph(text_answers, table, question, texts, images):
                 type="",
                 description="",
                 source_id=table['id'],
+                doc_id=str(table['id']),
             )
             graph.add_node(
                 table_title_upper + " " + table['table']['table_name'].upper() + " Bt: TABLE",
@@ -178,6 +209,7 @@ def construct_graph(text_answers, table, question, texts, images):
                 type="TABLE",
                 description=markdown_table,
                 source_id=table['id'],
+                doc_id=str(table['id']),
             )
             graph.add_edge(
                 table_title_upper + " Bt: ",
@@ -185,7 +217,8 @@ def construct_graph(text_answers, table, question, texts, images):
                 entity_name=table['title'] + " " + table['table']['table_name'],
                 weight=1,
                 description=table['title'] + " " + table['table']['table_name'] + " table",
-                source_id=table['id']
+                source_id=table['id'],
+                doc_id=str(table['id']),
             )
         else:
             graph.add_node(
@@ -194,6 +227,7 @@ def construct_graph(text_answers, table, question, texts, images):
                 type="TABLE",
                 description=markdown_table,
                 source_id=table['id'],
+                doc_id=str(table['id']),
             )
             graph.add_edge(
                 table_title_upper + " Bt: " + entity_dict[table_title_upper],
@@ -201,7 +235,8 @@ def construct_graph(text_answers, table, question, texts, images):
                 entity_name=table['title'] + " " + table['table']['table_name'],
                 weight=1,
                 description=table['title'] + " " + table['table']['table_name'] + " table",
-                source_id=table['id']
+                source_id=table['id'],
+                doc_id=str(table['id']),
             )
     # Add image nodes
     for image in images:
@@ -213,8 +248,9 @@ def construct_graph(text_answers, table, question, texts, images):
             image_description = (image.get("caption") or "").strip()
         if not image_description:
             desc_dir = os.getenv("WEBQA_IMAGE_DESC_DIR", "").strip()
-            legacy = os.getenv("MMQA_IMAGE_DESC_DIR", "").strip()
-            for base in (desc_dir, legacy, r"/home/changguojie/MMRAG/MMQA/image_description"):
+            _mmqa_default = str(Path(__file__).resolve().parent / "data" / "multimodalqa" / "image_descriptions")
+            legacy = os.getenv("MMQA_IMAGE_DESC_DIR", _mmqa_default).strip()
+            for base in (desc_dir, legacy):
                 if not base:
                     continue
                 try:
@@ -236,6 +272,7 @@ def construct_graph(text_answers, table, question, texts, images):
                 type="",
                 description="",
                 source_id=img_id,
+                doc_id=str(img_id),
             )
             graph.add_node(
                 image_entity_name_upper + " Bt: IMAGE",
@@ -243,6 +280,7 @@ def construct_graph(text_answers, table, question, texts, images):
                 type="IMAGE",
                 description=image_description,
                 source_id=img_id,
+                doc_id=str(img_id),
             )
             graph.add_edge(
                 image_entity_name_upper + " Bt: ",
@@ -257,6 +295,7 @@ def construct_graph(text_answers, table, question, texts, images):
                 type="IMAGE",
                 description=image_description,
                 source_id=img_id,
+                doc_id=str(img_id),
             )
             graph.add_edge(
                 image_entity_name_upper + " Bt: " + entity_dict[image_entity_name_upper],
@@ -276,23 +315,28 @@ def graph_to_graphml_str(graph):
 
 def main():
     base_dir = Path(__file__).resolve().parent
-    run_id = os.getenv("MMGRAPHRAG_RUN_ID", default_stamp()).strip()
-    slice_dir = Path(os.getenv("CONSTRUCT_WEBQA_SLICE_DIR", str(base_dir / "result" / run_id / "webqa_slice")))
+    _dataset = os.getenv("MMGRAPHRAG_DATASET", "webqa").strip().lower()
+    run_id = resolve_pipeline_run_id(base_dir, _dataset)
+    # CONSTRUCT_SLICE_DIR is the preferred env var; CONSTRUCT_WEBQA_SLICE_DIR kept for backwards compat
+    slice_dir = Path(os.getenv(
+        "CONSTRUCT_SLICE_DIR",
+        os.getenv("CONSTRUCT_WEBQA_SLICE_DIR", str(base_dir / "result" / run_id / f"{_dataset}_slice")),
+    ))
     question_file = os.getenv(
         "CONSTRUCT_QUESTION_FILE",
-        str(slice_dir / "webqa_questions.jsonl"),
+        str(slice_dir / f"{_dataset}_questions.jsonl"),
     )
     table_file = os.getenv(
         "CONSTRUCT_TABLE_FILE",
-        str(slice_dir / "webqa_tables.jsonl"),
+        str(slice_dir / f"{_dataset}_tables.jsonl"),
     )
     image_file = os.getenv(
         "CONSTRUCT_IMAGE_FILE",
-        str(slice_dir / "webqa_images.jsonl"),
+        str(slice_dir / f"{_dataset}_images.jsonl"),
     )
     text_file = os.getenv(
         "CONSTRUCT_TEXT_FILE",
-        str(slice_dir / "webqa_texts.jsonl"),
+        str(slice_dir / f"{_dataset}_texts.jsonl"),
     )
     answer_text_cache = os.getenv(
         "CONSTRUCT_EXTRACTION_CACHE",
@@ -352,7 +396,7 @@ def main():
                     )
         table = tables.get(table_id)
         img_list = [images[i] for i in image_doc_ids if i in images]
-        q_graph = construct_graph(text_results, table, question, texts, img_list)
+        q_graph = construct_graph(text_results, table, question, texts, img_list, owner_qid=qid)
         print(f"Graph has {q_graph.number_of_nodes()} nodes and {q_graph.number_of_edges()} edges")
         out_path = os.path.join(output_graph_dir, f"{qid}_graph.graphml")
         nx.write_graphml(q_graph, out_path)
@@ -381,4 +425,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    from pathlib import Path
+
+    from util.pipeline_session_log import run_with_session_stdio_tee
+
+    run_with_session_stdio_tee(Path(__file__).resolve().parent, "construct", main)

@@ -1,0 +1,130 @@
+{
+  "response": "[\"Film\", \"Person\"]##Person <|> appeared_in <|> Film<|COMPLETE|>",
+  "question": {
+    "qid": "e240f5fe65b39eee70d3576cff88fe5a",
+    "question": "Which film did Ben Piazza appear in first: \"Nightwing\" or the movie that shows half of a woman's face on the poster?",
+    "answers": [
+      {
+        "answer": "Tell Me That You Love Me, Junie Moon",
+        "type": "string",
+        "modality": "table",
+        "text_instances": [],
+        "table_indices": [
+          [
+            3,
+            1
+          ]
+        ],
+        "image_instances": []
+      }
+    ],
+    "metadata": {
+      "type": "Compare(Compose(TableQ,ImageQ),TableQ)",
+      "modalities": [
+        "image",
+        "table"
+      ],
+      "wiki_entities_in_question": [
+        {
+          "text": "Tell Me That You Love Me, Junie Moon",
+          "wiki_title": "Tell Me That You Love Me, Junie Moon",
+          "url": "https://en.wikipedia.org/wiki/Tell_Me_That_You_Love_Me,_Junie_Moon"
+        },
+        {
+          "text": "Nightwing",
+          "wiki_title": "Nightwing (film)",
+          "url": "https://en.wikipedia.org/wiki/Nightwing_(film)"
+        }
+      ],
+      "wiki_entities_in_answers": [
+        {
+          "text": "Tell Me That You Love Me, Junie Moon",
+          "wiki_title": "Tell Me That You Love Me, Junie Moon",
+          "url": "https://en.wikipedia.org/wiki/Tell_Me_That_You_Love_Me,_Junie_Moon"
+        }
+      ],
+      "pseudo_language_question": "In [Filmography] of [Ben Piazza], which [Title] has earlier [Year] : [Nightwing] or {the [Title(s)] that has the left half of a woman's face on its poster?}?",
+      "rephrasing_meta": {
+        "accuracy": 1.0,
+        "edit_distance": 0.5136186770428015,
+        "confidence": 0.8170992420120224
+      },
+      "image_doc_ids": [
+        "c29dbf5e372abe403f66c4845bf924b5",
+        "4e9411dae3cbab2b5223b9dabf825684",
+        "ddf8b52a8400deaf05940c5cad8169cd",
+        "c67ed9c5f5ba2a12fa95610d523fe28d",
+        "4b6d3e469ff8395a0f8c1a13c0422937",
+        "cadbc8e1fb23d7fe15b88ea1141d2dd2",
+        "1c0d30d5776bb8ee954667c5277f4bf7",
+        "ea2173ed76c57ccbe743e87c195f4a37",
+        "8b5a40ca458a36fb64a1785297b66fd8",
+        "9061cf6560fc6305fbd1575097c11aa4",
+        "7869011075ff671da6fd10497b262609",
+        "86cac3116bf69a5e5b2c20866d03e53c",
+        "103e78f3b29095aef414c5b18532da2c",
+        "ca2bf68495e00f43c248562bec134dbe"
+      ],
+      "text_doc_ids": [
+        "59e045476da3c1bb74f287b78b03bda1",
+        "692acfce5fd1a23c751cc2a5746c46c9",
+        "048d525e35c51a5fe8b6541d6574f2c2",
+        "162b6da3decfef3f22dda7fd879ebef5",
+        "c0bb6503939ccb52678ea2eb3a03b93c",
+        "127a4fc8d34e794fe10615c2f30818df",
+        "57f5784349a774d69bcbda63815e0732",
+        "fd51b8b6a2bad21f05b9671c0a5565e7",
+        "71441d55b94a7d66c090307229bfd4b1",
+        "bfb07219159788b8d1ed7ca9fd4960d8"
+      ],
+      "intermediate_answers": [
+        [
+          {
+            "answer": "Tell Me That You Love Me, Junie Moon",
+            "type": "string",
+            "modality": "image",
+            "text_instances": [],
+            "table_indices": [],
+            "image_instances": [
+              {
+                "doc_id": "ddf8b52a8400deaf05940c5cad8169cd",
+                "doc_part": "image"
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "answer": "Nightwing",
+            "type": "string",
+            "modality": "table",
+            "text_instances": [],
+            "table_indices": [
+              [
+                8,
+                1
+              ]
+            ],
+            "image_instances": []
+          }
+        ]
+      ],
+      "table_id": "8513db80c11ea439ab11eba406ec00d9"
+    },
+    "supporting_context": [
+      {
+        "doc_id": "8513db80c11ea439ab11eba406ec00d9",
+        "doc_part": "table"
+      },
+      {
+        "doc_id": "ddf8b52a8400deaf05940c5cad8169cd",
+        "doc_part": "image"
+      }
+    ]
+  },
+  "llm": {
+    "tier": "hf_gemma_4_e4b_it",
+    "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+    "base_url": "(in-process)"
+  }
+}

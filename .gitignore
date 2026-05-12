@@ -82,6 +82,11 @@ logs/
 
 # Project-specific (heavy or machine-local)
 models/
-result/
+#result/
 demo/be/config/paths.yaml
 .dev/
+memory/
+
+# Claude / Cursor
+.claude/
+.cursor/

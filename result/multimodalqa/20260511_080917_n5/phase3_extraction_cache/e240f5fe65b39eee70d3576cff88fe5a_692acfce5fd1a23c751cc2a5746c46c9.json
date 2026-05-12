@@ -1,0 +1,20 @@
+{
+  "response": "\"entity\"<|>\"The Night Porter\"<|>\"Film\"<|>\"A 1974 Italian erotic psychological drama film\"##\"entity\"<|>\"Liliana Cavani\"<|>\"Person\"<|>\"Director and co-writer of The Night Porter\"##\"entity\"<|>\"Dirk Bogarde\"<|>\"Person\"<|>\"Actor in The Night Porter\"##\"entity\"<|>\"Charlotte Rampling\"<|>\"Person\"<|>\"Actress in The Night Porter\"##\"entity\"<|>\"Philippe Leroy\"<|>\"Person\"<|>\"Actor in The Night Porter\"##\"entity\"<|>\"Gabriele Ferzetti\"<|>\"Person\"<|>\"Actor in The Night Porter\"##\"relationship\"<|>\"Liliana Cavani\"<|>\"The Night Porter\"<|>\"directed\"##\"relationship\"<|>\"Dirk Bogarde\"<|>\"The Night Porter\"<|>\"appeared in\"##\"relationship\"<|>\"Charlotte Rampling\"<|>\"The Night Porter\"<|>\"appeared in\"##\"relationship\"<|>\"Philippe Leroy\"<|>\"The Night Porter\"<|>\"appeared in\"##\"relationship\"<|>\"Gabriele Ferzetti\"<|>\"The Night Porter\"<|>\"appeared in\"",
+  "llm": {
+    "tier": "hf_gemma_4_e4b_it",
+    "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+    "base_url": "(in-process)"
+  },
+  "qid": "e240f5fe65b39eee70d3576cff88fe5a_692acfce5fd1a23c751cc2a5746c46c9",
+  "text_content": "The Night Porter (Italian: \"Il portiere di notte\") is a 1974 Italian erotic psychological drama film. Directed and co-written by Liliana Cavani, the film stars Dirk Bogarde and Charlotte Rampling, and features Philippe Leroy and Gabriele Ferzetti. Its themes of sexual and sadomasochistic obsession have made the film controversial since its initial release, with critics being divided over the film's artistic value.\nCharles is the misanthropic obsessive-compulsive owner of a photo shop. He lives alone, and at night sexually gratifies himself by sitting in a bowl of ice cream. One day, Charles notices an abundance of photos he has developed that have not been picked up. He begins to call each customer to remind them to pick up their photos. One of these customers is Florence, an elderly woman who is tormented by her gambling-addicted husband Lester. She longs for her son Willie, who joined the army two decades ago but has not returned any of her letters; although in fact, the dim-witted Willie does not realize that he is on the end of a cruel joke played by the Army mail-room workers who have not given him any of his mother's letters over the past twenty years or sent his.",
+  "graph_pattern": {
+    "type_list": [
+      "\"Film\"",
+      "\"Person\""
+    ],
+    "edge_list": [
+      "Person <|> appeared_in <|> Film"
+    ],
+    "question_text": "Which film did Ben Piazza appear in first: \"Nightwing\" or the movie that shows half of a woman's face on the poster?"
+  }
+}

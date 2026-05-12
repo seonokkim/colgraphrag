@@ -25,10 +25,7 @@ def default_webqa_data_root() -> Path:
     env = os.getenv("WEBQA_DATA_ROOT", "").strip()
     if env:
         return Path(env)
-    local = _REPO_ROOT / "data" / "webqa"
-    if local.is_dir():
-        return local
-    return Path("/workspace/data/webqa")
+    return _REPO_ROOT / "data" / "webqa"
 
 
 def default_train_val_path() -> Path:

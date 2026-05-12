@@ -19,6 +19,7 @@ interface NodeObject {
 const NODE_COLORS: Record<string, string> = {
   building: '#3b82f6',
   person: '#22c55e',
+  movie: '#0ea5e9',
   image: '#f59e0b',
   text: '#8b5cf6',
   default: '#6b7280',
@@ -26,6 +27,7 @@ const NODE_COLORS: Record<string, string> = {
 
 export function GraphViewer({ data, loading }: GraphViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState({ width: 400, height: 224 });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [ForceGraph, setForceGraph] = useState<React.ComponentType<any> | null>(null);
 
@@ -34,6 +36,20 @@ export function GraphViewer({ data, loading }: GraphViewerProps) {
       setForceGraph(() => mod.default);
     });
   }, []);
+
+  useEffect(() => {
+    if (loading || !data || data.nodes.length === 0) return;
+    const el = containerRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    function measure() {
+      const w = el.clientWidth;
+      if (w > 0) setDimensions((d) => (d.width === Math.floor(w) ? d : { width: Math.floor(w), height: 224 }));
+    }
+    measure();
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [loading, data]);
 
   const getNodeColor = useCallback((node: NodeObject) => {
     const type = node.type?.toLowerCase() || '';
@@ -46,7 +62,7 @@ export function GraphViewer({ data, loading }: GraphViewerProps) {
   if (loading) {
     return (
       <div className="border-t border-[#f0f0f0] pt-3">
-        <div className="h-48 rounded-xl bg-[#fafafa] border border-[#f0f0f0] flex items-center justify-center">
+        <div className="h-56 min-h-[224px] w-full rounded-xl bg-[#fafafa] border border-[#f0f0f0] flex items-center justify-center">
           <div className="flex gap-1.5 items-center">
             {[0, 1, 2].map((i) => (
               <div
@@ -91,7 +107,7 @@ export function GraphViewer({ data, loading }: GraphViewerProps) {
       </div>
       <div
         ref={containerRef}
-        className="h-48 rounded-xl bg-[#fafafa] border border-[#f0f0f0] overflow-hidden"
+        className="h-56 min-h-[224px] w-full rounded-xl bg-[#fafafa] border border-[#f0f0f0] overflow-hidden"
       >
         {ForceGraph ? (
           <ForceGraph
@@ -101,8 +117,8 @@ export function GraphViewer({ data, loading }: GraphViewerProps) {
             linkDirectionalArrowLength={3}
             linkColor={() => '#d4d4d4'}
             linkLabel={(link: { label: string | null }) => link.label}
-            width={containerRef.current?.clientWidth || 400}
-            height={192}
+            width={Math.max(dimensions.width, 320)}
+            height={224}
             backgroundColor="#fafafa"
           />
         ) : (

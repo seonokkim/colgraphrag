@@ -6,6 +6,9 @@ import type {
   QuestionDetail,
   GraphData,
   ChatResponse,
+  DatasetsResponse,
+  DatasetKey,
+  ModelKey,
 } from '@/types';
 
 const BASE_URL = '';
@@ -21,22 +24,30 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
 export const api = {
   health: () => fetchJson<HealthResponse>('/health'),
 
-  getRunInfo: () => fetchJson<RunInfo>('/api/run/info'),
+  getDatasets: () => fetchJson<DatasetsResponse>('/api/datasets'),
 
-  getRunScores: () => fetchJson<LeaderboardScores>('/api/run/scores'),
+  getRunInfo: (dataset: DatasetKey = 'webqa') =>
+    fetchJson<RunInfo>(`/api/run/info?dataset=${dataset}`),
 
-  getQuestions: () => fetchJson<QuestionSummary[]>('/api/questions'),
+  getRunScores: (dataset: DatasetKey = 'webqa') =>
+    fetchJson<LeaderboardScores>(`/api/run/scores?dataset=${dataset}`),
 
-  getQuestion: (qid: string) => fetchJson<QuestionDetail>(`/api/questions/${qid}`),
+  getQuestions: (dataset: DatasetKey = 'webqa') =>
+    fetchJson<QuestionSummary[]>(`/api/questions?dataset=${dataset}`),
 
-  getGraph: (qid: string) => fetchJson<GraphData>(`/api/graphs/${qid}`),
+  getQuestion: (qid: string, dataset: DatasetKey = 'webqa') =>
+    fetchJson<QuestionDetail>(`/api/questions/${qid}?dataset=${dataset}`),
 
-  getImageUrl: (imageId: string) => `/api/images/${imageId}`,
+  getGraph: (qid: string, dataset: DatasetKey = 'webqa') =>
+    fetchJson<GraphData>(`/api/graphs/${qid}?dataset=${dataset}`),
 
-  chat: (question: string) =>
+  getImageUrl: (imageId: string, dataset: DatasetKey = 'webqa') =>
+    `/api/images/${imageId}?dataset=${dataset}`,
+
+  chat: (question: string, dataset: DatasetKey = 'webqa', model: ModelKey = 'hf_gemma4_e4b') =>
     fetchJson<ChatResponse>('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({ question, dataset, model }),
     }),
 };

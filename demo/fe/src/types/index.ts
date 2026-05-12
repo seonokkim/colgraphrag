@@ -96,6 +96,31 @@ export interface HealthResponse {
   message: string | null;
 }
 
+export type DatasetKey = 'webqa' | 'mmqa';
+
+export type ModelKey =
+  | 'hf_gemma4_e4b'
+  | 'ollama_gemma4_e2b'
+  | 'ollama_gemma4_e4b';
+
+export const MODEL_OPTIONS: { key: ModelKey; label: string }[] = [
+  { key: 'hf_gemma4_e4b', label: 'HF Gemma 4 E4B' },
+  { key: 'ollama_gemma4_e2b', label: 'Ollama Gemma 4 E2B' },
+  { key: 'ollama_gemma4_e4b', label: 'Ollama Gemma 4 E4B' },
+];
+
+export interface DatasetInfo {
+  key: DatasetKey;
+  label: string;
+  available: boolean;
+  run_id: string | null;
+}
+
+export interface DatasetsResponse {
+  datasets: DatasetInfo[];
+  default: DatasetKey;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
@@ -105,6 +130,8 @@ export interface ChatMessage {
   graphData?: GraphData;
   goldFacts?: GoldFact[];
   loading?: boolean;
+  /** Round-trip / generation time in ms (from API or client fallback). */
+  elapsedMs?: number;
 }
 
 export interface ChatResponse {
@@ -112,5 +139,6 @@ export interface ChatResponse {
   sources: RetrievalItem[];
   graph: GraphData | null;
   gold_facts: GoldFact[];
-  elapsed_ms?: number;
+  matched_qid?: string | null;
+  elapsed_ms?: number | null;
 }

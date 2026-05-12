@@ -1,7 +1,7 @@
 """
-ColGraphRAG WebQA Demo Backend Server.
+ColGraphRAG Multi-Dataset Demo Backend Server.
 
-A read-only viewer for WebQA pipeline results. No external search or LLM APIs needed.
+A read-only viewer for WebQA and MultimodalQA pipeline results.
 
 Usage:
     cd demo/be
@@ -29,18 +29,25 @@ print(f"[demo-be] Session log: {_SESSION_LOG}", flush=True)
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from config.resolve_demo_paths import demo_paths_as_dict, load_demo_paths, DemoPaths
+from config.resolve_demo_paths import (
+    demo_paths_as_dict,
+    load_all_demo_paths,
+    DemoPaths,
+    MmqaDemoPaths,
+    MultiDatasetPaths,
+)
 from routers.health_router import router as health_router, set_run_id
 from routers.run_router import router as run_router
 from routers.questions_router import router as questions_router
 from routers.graph_router import router as graph_router
 from routers.images_router import router as images_router
 from routers.chat_router import router as chat_router
+from routers.datasets_router import router as datasets_router
 from services.run_service import RunService
 from services.question_service import QuestionService
 from services.graph_service import GraphService
 from services.image_service import ImageService
-from services.llm_service import LLMService
+from services.llm_service import LLMService, OllamaE4BLLMService, OllamaLLMService
 
 logger = logging.getLogger(__name__)
 
@@ -57,12 +64,22 @@ _ORIGINS = [
 async def lifespan(application: FastAPI) -> AsyncIterator[None]:
     """Lifespan handler: load paths and initialize services on startup."""
     try:
-        paths = load_demo_paths()
-        _init_services(application, paths)
-        logger.info("Loaded run_id=%s", paths.run_id)
-        logger.info("Result dir: %s", paths.result_run_dir)
-        for k, v in demo_paths_as_dict(paths).items():
-            logger.info("paths.%s=%s", k, v)
+        all_paths = load_all_demo_paths()
+
+        # WebQA
+        _init_webqa_services(application, all_paths.webqa)
+        logger.info("WebQA run_id=%s", all_paths.webqa.run_id)
+        for k, v in demo_paths_as_dict(all_paths.webqa).items():
+            logger.info("webqa.paths.%s=%s", k, v)
+
+        # MMQA
+        if all_paths.mmqa is not None:
+            _init_mmqa_services(application, all_paths.mmqa)
+            application.state.mmqa_paths = all_paths.mmqa
+            logger.info("MMQA run_id=%s", all_paths.mmqa.run_id)
+        else:
+            logger.info("No MMQA run directory found — MMQA endpoints will return 404.")
+
     except FileNotFoundError as e:
         logger.warning("Could not load paths: %s", e)
         logger.warning("Some endpoints may not work until result data exists.")
@@ -70,14 +87,13 @@ async def lifespan(application: FastAPI) -> AsyncIterator[None]:
 
 
 def _create_app() -> FastAPI:
-    """Build and configure the FastAPI application."""
     application = FastAPI(
-        title="ColGraphRAG WebQA Demo API",
+        title="ColGraphRAG Demo API",
         description=(
-            "Read-only viewer for ColGraphRAG WebQA pipeline results. "
-            "Serves questions, predictions, evaluation scores, and knowledge graphs."
+            "Read-only viewer for ColGraphRAG pipeline results. "
+            "Supports WebQA and MultimodalQA datasets."
         ),
-        version="0.1.0",
+        version="0.2.0",
         lifespan=lifespan,
     )
 
@@ -90,6 +106,7 @@ def _create_app() -> FastAPI:
     )
 
     application.include_router(health_router)
+    application.include_router(datasets_router)
     application.include_router(run_router)
     application.include_router(questions_router)
     application.include_router(graph_router)
@@ -99,33 +116,58 @@ def _create_app() -> FastAPI:
     @application.get("/")
     async def root() -> dict[str, str]:
         return {
-            "service": "ColGraphRAG WebQA Demo API",
+            "service": "ColGraphRAG Demo API",
             "docs": "/docs",
             "health": "/health",
-            "run_info": "/api/run/info",
-            "run_scores": "/api/run/scores",
-            "questions": "/api/questions",
-            "graphs": "/api/graphs/{qid}",
-            "images": "/api/images/{image_id}",
+            "datasets": "/api/datasets",
+            "run_info": "/api/run/info?dataset=webqa|mmqa",
+            "questions": "/api/questions?dataset=webqa|mmqa",
+            "graphs": "/api/graphs/{qid}?dataset=webqa|mmqa",
+            "images": "/api/images/{image_id}?dataset=webqa|mmqa",
             "chat": "/api/chat",
         }
 
     return application
 
 
-def _init_services(application: FastAPI, paths: DemoPaths) -> None:
-    """Initialize services and attach to app state."""
+def _init_webqa_services(application: FastAPI, paths: DemoPaths) -> None:
     application.state.demo_paths = paths
     application.state.run_service = RunService(paths.result_run_dir)
     application.state.question_service = QuestionService(
         result_run_dir=paths.result_run_dir,
         webqa_questions_jsonl=paths.webqa_questions_jsonl,
         phase4_graphs_out=paths.phase4_graphs_out,
+        dataset="webqa",
     )
     application.state.graph_service = GraphService(paths.phase4_graphs_out)
     application.state.image_service = ImageService(paths.webqa_imgs_dir)
     application.state.llm_service = LLMService(paths.phase4_graphs_out)
+    application.state.ollama_llm_service = OllamaLLMService(paths.phase4_graphs_out)
+    application.state.ollama_e4b_llm_service = OllamaE4BLLMService(paths.phase4_graphs_out)
     set_run_id(paths.run_id)
+
+
+def _init_mmqa_services(application: FastAPI, paths: MmqaDemoPaths) -> None:
+    application.state.mmqa_run_service = RunService(paths.result_run_dir)
+    application.state.mmqa_question_service = QuestionService(
+        result_run_dir=paths.result_run_dir,
+        webqa_questions_jsonl=paths.mmqa_questions_jsonl,
+        phase4_graphs_out=paths.phase4_graphs_out,
+        dataset="mmqa",
+    )
+    application.state.mmqa_graph_service = GraphService(paths.phase4_graphs_out)
+    application.state.mmqa_image_service = ImageService(paths.mmqa_imgs_dir)
+    application.state.mmqa_llm_service = LLMService(paths.phase4_graphs_out)
+    application.state.mmqa_ollama_llm_service = OllamaLLMService(paths.phase4_graphs_out)
+    application.state.mmqa_ollama_e4b_llm_service = OllamaE4BLLMService(paths.phase4_graphs_out)
+
+
+def init_demo_services(application: FastAPI, all_paths: MultiDatasetPaths) -> None:
+    """Wire WebQA and optional MMQA into ``application.state`` (for tests or tooling)."""
+    _init_webqa_services(application, all_paths.webqa)
+    if all_paths.mmqa is not None:
+        _init_mmqa_services(application, all_paths.mmqa)
+        application.state.mmqa_paths = all_paths.mmqa
 
 
 app = _create_app()
@@ -136,7 +178,7 @@ if __name__ == "__main__":
 
     import uvicorn
 
-    parser = argparse.ArgumentParser(description="ColGraphRAG WebQA Demo BE")
+    parser = argparse.ArgumentParser(description="ColGraphRAG Demo BE")
     parser.add_argument(
         "--host",
         default="127.0.0.1",

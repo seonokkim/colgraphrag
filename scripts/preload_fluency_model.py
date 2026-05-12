@@ -1,6 +1,7 @@
 """Preload the WebQA fluency (BART) model into the HF cache.
 
-Run once in the target venv so the first ``eval/evaluate_webqa_qa.py`` call
+Run once in the target venv so the first ``eval/evaluate_webqa_qa.py`` or
+``eval/evaluate_multimodal_qa.py`` call avoids a long BARTScore download and
 does not pay the HuggingFace download cost mid-evaluation.
 
 Usage (Command Prompt, inside C:\\workspace\\MultimodalGraphRAG\\.venv):

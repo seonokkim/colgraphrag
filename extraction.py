@@ -11,26 +11,28 @@ import re
 import aiohttp
 
 from util.llm_defaults import DEFAULT_GEMMA4_E4B_IT_MODEL_PATH, ensure_default_gemma4_e4b_it_path
-from util.run_id import default_stamp
+from util.repo_config import forbid_dry_run, require_cuda, require_gemma_local
+from util.result_layout import resolve_pipeline_run_id
 from prompt import EXTRACT_RELATION_PROMPT
 
 ensure_default_gemma4_e4b_it_path()
 
 CONCURRENCY = int(os.getenv("EXTRACTION_CONCURRENCY", "8"))
 _BASE_DIR = Path(__file__).resolve().parent
-_RUN_ID = os.getenv("MMGRAPHRAG_RUN_ID", default_stamp()).strip()
+_DATASET = os.getenv("MMGRAPHRAG_DATASET", "webqa").strip().lower()
+_RUN_ID = resolve_pipeline_run_id(_BASE_DIR, _DATASET)
 CACHE_DIR = os.getenv(
     "EXTRACTION_CACHE_DIR",
     str(_BASE_DIR / "result" / _RUN_ID / "phase3_extraction_cache"),
 )
-_SLICE = _BASE_DIR / "result" / _RUN_ID / "webqa_slice"
+_SLICE = _BASE_DIR / "result" / _RUN_ID / f"{_DATASET}_slice"
 QUESTION_FILE = os.getenv(
     "EXTRACTION_QUESTION_FILE",
-    str(_SLICE / "webqa_questions.jsonl"),
+    str(_SLICE / f"{_DATASET}_questions.jsonl"),
 )
 TEXT_FILE = os.getenv(
     "EXTRACTION_TEXT_FILE",
-    str(_SLICE / "webqa_texts.jsonl"),
+    str(_SLICE / f"{_DATASET}_texts.jsonl"),
 )
 PATTERN_CACHE_DIR = os.getenv(
     "EXTRACTION_PATTERN_CACHE_DIR",
@@ -148,7 +150,13 @@ async def make_request(session: aiohttp.ClientSession, prompt: str,
     result['graph_pattern'] = graph_pattern
     with open(cache_file, "w", encoding="utf-8") as file:
         json.dump(result, file, ensure_ascii=False, indent=2)
+
+
 async def main():
+    forbid_dry_run("extraction", dry_run=DRY_RUN)
+    if not DRY_RUN:
+        require_cuda("extraction")
+        require_gemma_local("extraction")
     os.makedirs(CACHE_DIR, exist_ok=True)
     questions = await load_question_data(QUESTION_FILE)
     text_data = await load_text_data(TEXT_FILE)
@@ -191,4 +199,10 @@ async def main():
             await asyncio.gather(*tasks)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import asyncio
+    from pathlib import Path
+
+    from util.pipeline_session_log import run_with_session_stdio_tee
+
+    _repo = Path(__file__).resolve().parent
+    run_with_session_stdio_tee(_repo, "extraction", lambda: asyncio.run(main()))

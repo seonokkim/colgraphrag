@@ -27,7 +27,7 @@ from util.webqa_load import (
     resolve_profile,
 )
 from util.webqa_gold_normalize import normalize_webqa_answer_strings
-from util.run_id import stamped_run_id
+from util.result_layout import webqa_stamped_run_id
 
 
 def _fact_text(fact: dict | str) -> str:
@@ -134,7 +134,7 @@ def _build_rows_for_record(rec: dict, test_mode: bool) -> tuple[dict, list[dict]
 
 def main() -> None:
     base = Path(__file__).resolve().parent
-    run_id = os.getenv("MMGRAPHRAG_RUN_ID", "").strip() or stamped_run_id("webqa_export")
+    run_id = os.getenv("MMGRAPHRAG_RUN_ID", "").strip() or webqa_stamped_run_id("export")
     profile = resolve_profile()
     json_path = os.getenv("WEBQA_JSON_FILE", "").strip()
     if not json_path:
@@ -213,4 +213,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    from pathlib import Path
+
+    from util.pipeline_session_log import run_with_session_stdio_tee
+
+    run_with_session_stdio_tee(Path(__file__).resolve().parent, "export_webqa_slice", main)

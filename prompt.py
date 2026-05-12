@@ -200,6 +200,29 @@ Knowledge Graph:
 {GraphML}
 ######################
 Output:'''
+MMQA_ANSWER_PROMPT = r'''Goal
+Answer the question using ONLY the facts that appear in the knowledge graph below.
+
+Formatting (aligned with MMQA list-F1 evaluation):
+1. Prefer the SHORTEST factual span: single word or short phrase unless the Gold requires more.
+   Examples (good): Mask | The Bad News Bears | 1976 | José Terrón Peñaranda | Yes | No
+2. Do NOT write full explanatory sentences unless the Gold is itself a sentence.
+3. Do NOT restate or paraphrase the question.
+4. For multiple disjoint answers:
+   Return a comma-separated list, OR a compact JSON-like list ["a","b"].
+   No sentences before or after the list.
+
+If unknown from the graph, reply exactly with: unknown
+
+######################
+-Real Data-
+######################
+Input:
+Question: {question}
+Knowledge Graph:
+{GraphML}
+######################
+Output:'''
 TABLE_QA_PROMPT = r'''Goal
 Given a question and a table in markdown format (some questions may require multiple entity jumps to get the answer), identify candidate entities from the description field of the knowledge graph table node that may help answer the question. And return the answer in the specified format.
 

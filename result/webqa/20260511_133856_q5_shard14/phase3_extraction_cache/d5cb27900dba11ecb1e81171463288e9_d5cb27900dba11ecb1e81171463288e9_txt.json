@@ -1,0 +1,15 @@
+{
+  "response": "\"entity\"<|>\"\"<|>\"QUESTION\"<|>\"query entity\"##\"entity\"<|>\"Question: Are the tops of the caps of Coprinus comatus and Amanita nothofagi mushrooms the same color ? Answer: The tops\"<|>\"TEXT\"<|>\"context entity\"##\"relationship\"<|>\"\"<|>\"Question: Are the tops of the caps of Coprinus comatus and Amanita nothofagi mushrooms the same color ? Answer: The tops\"<|>\"related context\"",
+  "llm": {
+    "tier": "dry-run",
+    "model": "(none)",
+    "base_url": "(none)"
+  },
+  "qid": "d5cb27900dba11ecb1e81171463288e9_d5cb27900dba11ecb1e81171463288e9_txt",
+  "text_content": "Question: Are the tops of the caps of Coprinus comatus and Amanita nothofagi mushrooms the same color ? Answer: The tops of the caps of Coprinus comatus and Amanita nothofagi mushrooms are not the same color as each other.",
+  "graph_pattern": {
+    "type_list": [],
+    "edge_list": [],
+    "question_text": ""
+  }
+}

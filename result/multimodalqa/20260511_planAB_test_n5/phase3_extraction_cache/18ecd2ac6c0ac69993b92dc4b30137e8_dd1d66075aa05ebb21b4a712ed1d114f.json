@@ -1,0 +1,21 @@
+{
+  "response": "\"entity\"<|>\"Renzo Arbore\"<|>\"Person\"<|>\"One of the people in the film\"##\"entity\"<|>\"Luciano De Crescenzo\"<|>\"Person\"<|>\"One of the people in the film\"##\"entity\"<|>\"Federico Fellini\"<|>\"Person\"<|>\"Real-life filmmaker\"##\"entity\"<|>\"F.F.S.S\"<|>\"Title\"<|>\"Screenplay title\"##\"entity\"<|>\"Pantalone\"<|>\"Person\"<|>\"Primary member of Vecchio group\"##\"entity\"<|>\"Il Dottore\"<|>\"Person\"<|>\"Primary member of Vecchio group\"##\"entity\"<|>\"Il Capitano\"<|>\"Person\"<|>\"Primary member of Vecchio group\"##\"relationship\"<|>\"Renzo Arbore\"<|>\"F.F.S.S\"<|>\"in filmography of\"##\"relationship\"<|>\"Luciano De Crescenzo\"<|>\"F.F.S.S\"<|>\"in filmography of\"##\"relationship\"<|>\"Federico Fellini\"<|>\"F.F.S.S\"<|>\"has poster feature\"##\"relationship\"<|>\"Pantalone\"<|>\"Il Dottore\"<|>\"alter ego of\"",
+  "llm": {
+    "tier": "hf_gemma_4_e4b_it",
+    "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+    "base_url": "(in-process)"
+  },
+  "qid": "18ecd2ac6c0ac69993b92dc4b30137e8_dd1d66075aa05ebb21b4a712ed1d114f",
+  "text_content": "The film begins with Renzo Arbore and Luciano De Crescenzo driving in Rome, while discussing an original idea for a new movie. They pass under the window of real-life filmmaker Federico Fellini, who is writing a screenplay entitled \"F.F.S.S\" (\"Federico Fellini Sud Story\"). A wind causes the screenplay to fall to the road below, and the two pick it up and decide to use Fellini's ideas themselves.\nVecchio (; plural \"vecchi\", meaning \"old one\" or simply \"old\"), is a category of aged, male characters from the Italian \"commedia dell'arte\". The primary members of this group are Pantalone, Il Dottore and Il Capitano. Pantalone and Il Dottore are the alter ego of each other, Pantalone being the decadent wealthy merchant, and Il Dottore being the decadent erudite.",
+  "graph_pattern": {
+    "type_list": [
+      "\"Title\"",
+      "\"Person\""
+    ],
+    "edge_list": [
+      "Title <|> in_filmography_of <|> Person",
+      "Title <|> has_poster_feature <|> Woman"
+    ],
+    "question_text": "Which Title(s), in Filmography of Ben Piazza, has the left half of a woman's face on its poster?"
+  }
+}

@@ -14,6 +14,23 @@ The dev script binds **0.0.0.0:5173** so the UI is reachable from RunPod HTTP pr
 
 **Note:** Start the backend first (`demo/be/`, default port **8000**). The FE calls `/api` and `/health`; Vite proxies them to `http://127.0.0.1:8000`.
 
+### WSL on Windows: `UNC paths are not supported` / `CMD.EXE`
+
+If `npm install` fails under `esbuild` or `npm run dev` cannot find `vite.js`, your **Windows** Node/npm is earlier on `PATH` than Linux (e.g. `which npm` shows `/mnt/c/Program Files/nodejs/npm`). Windows `cmd.exe` cannot use `\\wsl.localhost\...` as the working directory.
+
+**Fix:** Use **Linux** Node inside WSL (Node 18+), then reinstall:
+
+```bash
+command -v npm node   # must NOT be under /mnt/c/...
+# Example with nvm (no admin):
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+# restart shell, then:
+nvm install 20
+cd demo/fe && rm -rf node_modules && npm install && npm run dev
+```
+
+Alternatively clone or copy the repo to a **Windows path** (e.g. `C:\Users\...\late-interaction-mm-graph-rag`) and run `npm` from **PowerShell/CMD** there.
+
 ### RunPod / Remote SSH
 
 1. Use **Node 18+** (e.g. `nvm install --lts`). Ubuntu `apt` Node 12 is too old for Vite 6.

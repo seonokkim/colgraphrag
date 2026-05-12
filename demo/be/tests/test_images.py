@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import pytest
+
+_IMAGE_TYPES = frozenset({"image/png", "image/jpeg", "image/webp", "image/gif"})
+
 
 def test_list_images(client):
     """Images list endpoint returns IDs."""
@@ -23,7 +27,7 @@ def test_get_image(client):
     response = client.get(f"/api/images/{image_id}")
 
     if response.status_code == 200:
-        assert response.headers.get("content-type") == "image/png"
+        assert response.headers.get("content-type") in _IMAGE_TYPES
     else:
         assert response.status_code == 404
 
@@ -31,4 +35,37 @@ def test_get_image(client):
 def test_get_image_not_found(client):
     """Non-existent image returns 404."""
     response = client.get("/api/images/nonexistent_image_999999")
+    assert response.status_code == 404
+
+
+def test_list_images_mmqa(client, mmqa_configured):
+    if not mmqa_configured:
+        pytest.skip("No MultimodalQA demo run")
+
+    response = client.get("/api/images?dataset=mmqa")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+
+def test_get_image_mmqa(client, mmqa_configured):
+    if not mmqa_configured:
+        pytest.skip("No MultimodalQA demo run")
+
+    images = client.get("/api/images?dataset=mmqa&limit=10").json()
+    if not images:
+        pytest.skip("No MMQA image files under configured imgs_dir")
+
+    image_id = images[0]
+    response = client.get(f"/api/images/{image_id}?dataset=mmqa")
+    if response.status_code == 200:
+        assert response.headers.get("content-type") in _IMAGE_TYPES
+    else:
+        assert response.status_code == 404
+
+
+def test_get_image_not_found_mmqa(client, mmqa_configured):
+    if not mmqa_configured:
+        pytest.skip("No MultimodalQA demo run")
+
+    response = client.get("/api/images/nonexistent_image_999999?dataset=mmqa")
     assert response.status_code == 404

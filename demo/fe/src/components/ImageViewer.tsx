@@ -1,12 +1,13 @@
 import { Image as ImageIcon } from 'lucide-react';
-import type { GoldFact } from '@/types';
+import type { GoldFact, DatasetKey } from '@/types';
 import { api } from '@/api/client';
 
 interface ImageViewerProps {
   facts: GoldFact[];
+  dataset?: DatasetKey;
 }
 
-export function ImageViewer({ facts }: ImageViewerProps) {
+export function ImageViewer({ facts, dataset = 'webqa' }: ImageViewerProps) {
   const imageFacts = facts.filter((f) => f.fact_type === 'image');
   if (imageFacts.length === 0) return null;
 
@@ -22,7 +23,7 @@ export function ImageViewer({ facts }: ImageViewerProps) {
         {imageFacts.map((img) => (
           <div key={img.id} className="relative group rounded-lg overflow-hidden border border-[#f0f0f0]">
             <img
-              src={api.getImageUrl(img.id)}
+              src={api.getImageUrl(img.id, dataset)}
               alt={img.title || `Image ${img.id}`}
               className="w-full h-28 object-cover bg-[#fafafa]"
               onError={(e) => {

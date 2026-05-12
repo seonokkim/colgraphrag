@@ -3,8 +3,8 @@ import json
 import logging
 import os
 import re
+from collections.abc import Mapping
 from glob import glob
-from datetime import datetime
 from pathlib import Path
 
 import networkx as nx
@@ -13,13 +13,23 @@ import torch
 from prompt import *
 
 from util.request import load_pretrained_model_with_fallback
-from util.run_id import default_stamp
+from util.llm_defaults import effective_gemma4_e4b_it_model_path, ensure_default_gemma4_e4b_it_path
+from util.pipeline_session_log import new_session_log_path, repo_logs_dir
+from util.repo_config import (
+    forbid_dry_run,
+    require_colembed_for_inference,
+    require_cuda,
+    require_gemma_local,
+)
+from util.result_layout import resolve_pipeline_run_id
 from PIL import Image, ImageDraw, ImageFont
 from transformers import AutoProcessor, AutoModel
 from tqdm import tqdm
 
 DRY_RUN = os.getenv("INFERENCE_DRY_RUN", "0") == "1"
 _HF_GEMMA_MODULE = None
+
+ensure_default_gemma4_e4b_it_path()
 
 
 def _get_hf_gemma_module():
@@ -44,30 +54,38 @@ def _hf_gemma_generate_text(prompt: str) -> tuple[str, dict]:
     text = gemma.generate_text(prompt, max_new_tokens=512)
     llm_meta = {
         "tier": "hf_gemma_4_e4b_it",
-        "model": os.getenv("GEMMA4_E4B_IT_MODEL_PATH", "/workspace/models/mllm/gemma-4-e4b-it"),
+        "model": effective_gemma4_e4b_it_model_path(),
         "base_url": "(in-process)",
     }
     return text, llm_meta
 _BASE_DIR = Path(__file__).resolve().parent
-_RUN_ID = os.getenv("MMGRAPHRAG_RUN_ID", default_stamp()).strip()
+_DATASET = os.getenv("MMGRAPHRAG_DATASET", "webqa").strip().lower()
+_RUN_ID = resolve_pipeline_run_id(_BASE_DIR, _DATASET)
 GRAPH_DIR = os.getenv(
     "INFERENCE_GRAPH_DIR",
     str(_BASE_DIR / "result" / _RUN_ID / "phase4_graphs_real"),
 )
-_SLICE = _BASE_DIR / "result" / _RUN_ID / "webqa_slice"
+_SLICE = _BASE_DIR / "result" / _RUN_ID / f"{_DATASET}_slice"
 QUESTION_FILE = os.getenv(
     "INFERENCE_QUESTION_FILE",
-    str(_SLICE / "webqa_questions.jsonl"),
+    str(_SLICE / f"{_DATASET}_questions.jsonl"),
 )
 OUTPUT_JSON = os.getenv(
     "INFERENCE_OUTPUT_JSON",
-    str(_BASE_DIR / "result" / _RUN_ID / "phase5_predictions_real.json"),
+    str(_BASE_DIR / "result" / _RUN_ID / "phase5_inference" / "predictions.json"),
 )
 INFERENCE_RETRIEVAL_JSON = os.getenv("INFERENCE_RETRIEVAL_JSON", "")
 MAX_QUESTIONS = int(os.getenv("INFERENCE_MAX_QUESTIONS", "20"))
-LOG_ROOT = Path(os.getenv("MMGRAPHRAG_LOG_DIR", str(_BASE_DIR / "logs")))
-_LOG_TIMESTAMP = datetime.now().strftime("%Y%m%d_%H%M%S")
-_LOG_FILE_PATH = LOG_ROOT / f"{_LOG_TIMESTAMP}_colembed_inference.log"
+
+_INFER_COLEMBED_FALLBACK_LOG: Path | None = None
+
+
+def _colembed_fallback_log_file() -> Path:
+    """When no ``MMGRAPHRAG_SESSION_LOG_PATH`` (tee), use timestamped file under ``logs/``."""
+    global _INFER_COLEMBED_FALLBACK_LOG
+    if _INFER_COLEMBED_FALLBACK_LOG is None:
+        _INFER_COLEMBED_FALLBACK_LOG = new_session_log_path(_BASE_DIR, "inference_colembed")
+    return _INFER_COLEMBED_FALLBACK_LOG
 
 model = None
 processor = None
@@ -97,8 +115,8 @@ def _default_models_sidecar_path(output_json_path: str) -> str:
           }
         }
 
-    Written next to ``phase5_predictions_real.json`` as
-    ``phase5_predictions_real_models.json`` so the evaluator's original
+    Written next to ``phase5_inference/predictions.json`` as
+    ``phase5_inference/predictions_models.json`` so the evaluator's original
     ``{qid: answer_str}`` file stays untouched.
     """
     if output_json_path.endswith(".json"):
@@ -149,25 +167,118 @@ def _write_models_sidecar(path: str, qid_to_llm: dict[str, dict]) -> None:
         json.dump(payload, f, ensure_ascii=False, indent=2)
 
 
-def extract_ranked_source_ids_from_graph(graph: nx.Graph, top_k: int = 10):
-    ranked = []
-    seen = set()
-    for node_name, node_data in graph.nodes(data=True):
-        source_id = node_data.get("source_id")
-        if not source_id:
-            continue
-        sid = str(source_id)
-        if sid in seen:
-            continue
-        seen.add(sid)
+def _strip_question_id_prefix(qid: str, token: str) -> str:
+    """Normalize MMQA attribution tokens like `{qid}_{doc_id}` to gold `doc_id`."""
+    t = token.strip()
+    if not qid or not t:
+        return t
+    prefix = f"{qid}_"
+    return t[len(prefix) :] if t.startswith(prefix) else t
+
+
+def _tokens_for_retrieval_attrs(node_or_edge_attrs: Mapping, qid: str) -> list[str]:
+    """Resolve canonical corpus ids from GraphML attrs (prefer `doc_id`; else split `source_id`)."""
+    if not isinstance(node_or_edge_attrs, Mapping):
+        return []
+    doc_id_raw = node_or_edge_attrs.get("doc_id")
+    if isinstance(doc_id_raw, str) and doc_id_raw.strip():
+        parts = [p.strip() for p in doc_id_raw.split(",") if p.strip()]
+        out = [p for p in parts if p]
+        if out:
+            return out
+    raw_sid = node_or_edge_attrs.get("source_id")
+    if raw_sid is None:
+        return []
+    chunks = [p.strip() for p in str(raw_sid).split(",") if p.strip()]
+    return [_strip_question_id_prefix(qid, ch) for ch in chunks]
+
+
+def canonical_graph_doc_candidates(graph: nx.Graph, qid: str, capacity: int = 64) -> list[dict]:
+    """Distinct doc/table IDs from graph nodes & edges with degree-derived salience."""
+    scores: dict[str, float] = {}
+
+    def _bump(candidate_ids: list[str], strength: float) -> None:
+        for cid in candidate_ids:
+            if not cid:
+                continue
+            prev = scores.get(cid)
+            if prev is None or strength > prev:
+                scores[cid] = strength
+
+    for nodename, attrs in graph.nodes(data=True):
+        deg = float(graph.degree[nodename])
+        _bump(_tokens_for_retrieval_attrs(attrs, qid), deg)
+
+    for u, v, attrs in graph.edges(data=True):
+        deg_max = max(float(graph.degree[u]), float(graph.degree[v]))
+        _bump(_tokens_for_retrieval_attrs(attrs, qid), deg_max)
+
+    ordered = sorted(scores.items(), key=lambda kv: (-kv[1], kv[0]))
+    ranked: list[dict] = []
+    for idx, (doc_id_val, scr) in enumerate(ordered[:capacity]):
         ranked.append(
             {
-                "id": sid,
-                "score": float(graph.degree[node_name]),
+                "id": doc_id_val,
+                "score": scr,
+                "rank": idx + 1,
+                "source": "graph_topological",
             }
         )
-    ranked.sort(key=lambda x: (-x["score"], x["id"]))
+    return ranked
+
+
+def extract_ranked_source_ids_from_graph(graph: nx.Graph, top_k: int = 10):
+    ranked = canonical_graph_doc_candidates(graph, qid="", capacity=max(top_k, 32))
     return ranked[:top_k]
+
+
+def _merge_colembed_with_graph_rank(
+    colembed_entries: list[dict],
+    graph: nx.Graph,
+    top_k: int,
+    qid: str,
+) -> list[dict]:
+    """Keep ColEmbed-ranked images first; fill remaining slots with canonical graph doc IDs."""
+    gc = canonical_graph_doc_candidates(graph, qid, capacity=96)
+    if not colembed_entries:
+        return gc[:top_k]
+
+    merged: list[dict] = []
+    seen: set[str] = set()
+    lowest = float(colembed_entries[-1].get("score", 0.0))
+    step = 0.001
+    rank = 0
+
+    for ce in colembed_entries:
+        if len(merged) >= top_k:
+            break
+        iid = str(ce.get("id", "")).strip()
+        if not iid or iid in seen:
+            continue
+        seen.add(iid)
+        rank += 1
+        row = dict(ce)
+        row["id"] = iid
+        row["rank"] = rank
+        merged.append(row)
+
+    for ge in gc:
+        if len(merged) >= top_k:
+            break
+        iid = str(ge.get("id", "")).strip()
+        if not iid or iid in seen:
+            continue
+        seen.add(iid)
+        rank += 1
+        merged.append(
+            {
+                "id": iid,
+                "score": float(ge.get("score", lowest - step * rank)),
+                "rank": rank,
+                "source": "graph_enriched",
+            }
+        )
+    return merged
 
 
 def _default_webqa_imgs_root() -> Path:
@@ -176,31 +287,44 @@ def _default_webqa_imgs_root() -> Path:
         root = Path(env_root)
     else:
         local = _BASE_DIR / "data" / "webqa"
-        root = local if local.is_dir() else Path("/workspace/data/webqa")
+        root = local
     return Path(
         os.getenv("WEBQA_IMGS_DIR", str(root / "WebQA_data_first_release" / "imgs"))
     )
 
 
-def _load_webqa_slice_images_index(slice_dir: Path) -> dict[str, dict]:
+def _default_mmqa_imgs_root() -> Path:
+    env = os.getenv("MMQA_IMAGES_DIR", "").strip()
+    if env:
+        return Path(env)
+    return _BASE_DIR / "data" / "multimodalqa" / "final_dataset_images"
+
+
+def _load_slice_images_index(slice_dir: Path) -> dict[str, dict]:
+    """Load image metadata from the dataset-prefixed JSONL in slice_dir."""
     idx: dict[str, dict] = {}
-    p = slice_dir / "webqa_images.jsonl"
-    if not p.is_file():
-        return idx
-    with p.open(encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            row = json.loads(line)
-            rid = str(row.get("id", "")).strip()
-            if rid:
-                idx[rid] = row
+    for fname in (f"{_DATASET}_images.jsonl", "webqa_images.jsonl"):
+        p = slice_dir / fname
+        if p.is_file():
+            with p.open(encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    row = json.loads(line)
+                    rid = str(row.get("id", "") or row.get("image_id", "")).strip()
+                    if rid:
+                        idx[rid] = row
+            return idx
     return idx
 
 
+# Backwards-compat alias kept for any external callers.
+_load_webqa_slice_images_index = _load_slice_images_index
+
+
 def _resolve_webqa_image_fs_path(row: dict, imgs_root: Path) -> str | None:
-    raw = (row.get("path") or "").strip()
+    raw = (row.get("path") or row.get("url") or "").strip()
     if raw:
         p = Path(raw)
         if p.is_file():
@@ -208,6 +332,9 @@ def _resolve_webqa_image_fs_path(row: dict, imgs_root: Path) -> str | None:
         rel = imgs_root / raw.lstrip("/\\")
         if rel.is_file():
             return str(rel.resolve())
+        repo_rel = _BASE_DIR / raw.lstrip("/\\")
+        if repo_rel.is_file():
+            return str(repo_rel.resolve())
     iid = str(row.get("id") or row.get("image_id") or "").strip()
     if not iid:
         return None
@@ -353,37 +480,45 @@ def _extract_dry_run_answer_from_graph(g: nx.Graph, question_text: str) -> str:
 
 
 def setup_logger() -> logging.Logger:
-    LOG_ROOT.mkdir(parents=True, exist_ok=True)
+    repo_logs_dir(_BASE_DIR).mkdir(parents=True, exist_ok=True)
     if logger.handlers:
         return logger
     logger.setLevel(logging.INFO)
     formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(name)s | %(message)s")
 
-    file_handler = logging.FileHandler(_LOG_FILE_PATH, encoding="utf-8")
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
+    session_log = os.getenv("MMGRAPHRAG_SESSION_LOG_PATH", "").strip()
+    file_handler: logging.FileHandler | None = None
+    if session_log:
+        log_dest = str(Path(session_log).expanduser().resolve())
+    else:
+        fh_path = _colembed_fallback_log_file()
+        file_handler = logging.FileHandler(fh_path, encoding="utf-8")
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+        log_dest = str(fh_path.resolve())
 
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(formatter)
     logger.addHandler(stream_handler)
 
     logger.propagate = False
-    logger.info("Logger initialized. log_file=%s", _LOG_FILE_PATH)
+    logger.info("Logger initialized. log_file=%s", log_dest)
 
     request_logger = logging.getLogger("webqa.request")
     if not request_logger.handlers:
         request_logger.setLevel(logging.INFO)
-        request_logger.addHandler(file_handler)
+        if file_handler is not None:
+            request_logger.addHandler(file_handler)
         request_logger.addHandler(stream_handler)
         request_logger.propagate = False
     return logger
 
 def _colembed_local_first_default() -> str:
-    """Local-first: <repo>/models/retriever/..., then /workspace/models/retriever/..."""
-    local = Path(__file__).resolve().parent / "models" / "retriever" / "llama-nemotron-colembed-vl-3b-v2"
+    """Prefer <repo>/models/retriever/...; else same path (install via util/download_models.py)."""
+    local = _BASE_DIR / "models" / "retriever" / "llama-nemotron-colembed-vl-3b-v2"
     if local.is_dir():
-        return str(local)
-    return "/workspace/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+        return str(local.resolve())
+    return str(local)
 
 
 def resolve_vision_model_ref() -> str:
@@ -408,8 +543,8 @@ def resolve_colembed_max_input_tiles() -> int:
     Default **8** follows the arXiv-26 Nemotron ColEmbed V2 paper
     recommendation (``reference/paper/arXiv-26_ColEmbed V2-2602.03992v1/
     content/3_colembedv2.tex`` § 3.3: dynamic tiling with
-    ``max_input_tiles=8`` at inference). The checkpoint shipped in
-    ``C:\\workspace\\models\\retriever\\llama-nemotron-colembed-vl-3b-v2``
+    ``max_input_tiles=8`` at inference). The checkpoint under
+    ``models/retriever/llama-nemotron-colembed-vl-3b-v2``
     defaults to ``max_input_tiles=6`` in its processor config, which is
     visibly too coarse for fine-grained WebQA visual attributes
     (color / shape / number) — see
@@ -729,138 +864,166 @@ def load_jsonl_data(path):
 
 
 if __name__ == "__main__":
-    setup_logger()
-    questions = load_jsonl_data(QUESTION_FILE)
-    if MAX_QUESTIONS > 0:
-        questions = questions[:MAX_QUESTIONS]
-    predictions = {}
-    retrieval_predictions = {}
-    retrieval_output_json = (
-        INFERENCE_RETRIEVAL_JSON.strip()
-        if INFERENCE_RETRIEVAL_JSON.strip()
-        else _default_retrieval_json_path(OUTPUT_JSON)
-    )
-    # qid -> LLM attribution (same shape as util.request.text_request_with_meta
-    # returns). Written to <output>_models.json as a sidecar; the main
-    # predictions file stays {qid: answer_str} so the QA evaluator is
-    # untouched.
-    qid_to_llm: dict[str, dict] = {}
-    models_sidecar_json = _default_models_sidecar_path(OUTPUT_JSON)
+    from pathlib import Path
 
-    _slice_for_retrieval = Path(os.getenv("INFERENCE_WEBQA_SLICE_DIR", str(_SLICE)))
-    _use_colembed_retrieval = os.getenv("INFERENCE_COLEMBED_RETRIEVAL", "1").strip().lower() not in (
-        "0",
-        "false",
-        "no",
-    )
-    _images_index = (
-        _load_webqa_slice_images_index(_slice_for_retrieval) if _use_colembed_retrieval else {}
-    )
-    _imgs_root = _default_webqa_imgs_root()
-    _topk_colembed = int(os.getenv("INFERENCE_COLEMBED_TOP_K", "10"))
+    from util.pipeline_session_log import run_with_session_stdio_tee
 
-    def _fill_retrieval(question_dict: dict, graph_obj: nx.Graph) -> list:
-        if _use_colembed_retrieval:
-            md = question_dict.get("metadata") or {}
-            img_ids = md.get("image_doc_ids") or []
-            ranked, ok = colembed_maxsim_ranked_sources(
-                _get_question_text(question_dict),
-                img_ids,
-                _images_index,
-                _imgs_root,
-                _topk_colembed,
-            )
-            if ok and ranked:
-                return ranked
-        return extract_ranked_source_ids_from_graph(graph_obj, top_k=10)
-
-    if DRY_RUN:
-        for question in tqdm(questions, desc="Processing Questions (dry-run)"):
-            qid = _get_qid(question)
-            graph_path = os.path.join(GRAPH_DIR, f"{qid}_graph.graphml")
-            if not os.path.exists(graph_path):
-                predictions[qid] = "unknown"
-                retrieval_predictions[qid] = []
-                qid_to_llm[qid] = {"tier": "dry-run", "model": "(none)", "base_url": "(none)", "reason": "missing-graph"}
-                continue
-            try:
-                g = nx.read_graphml(graph_path)
-                retrieval_predictions[qid] = _fill_retrieval(question, g)
-                answer = _extract_dry_run_answer_from_graph(g, _get_question_text(question))
-                predictions[qid] = str(answer)
-                qid_to_llm[qid] = {"tier": "dry-run", "model": "(none)", "base_url": "(none)", "reason": "graph-heuristic"}
-            except Exception:
-                predictions[qid] = "unknown"
-                retrieval_predictions[qid] = []
-                qid_to_llm[qid] = {"tier": "dry-run", "model": "(none)", "base_url": "(none)", "reason": "graph-read-error"}
-        with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
-            json.dump(predictions, f, ensure_ascii=False, indent=2)
-        with open(retrieval_output_json, "w", encoding="utf-8") as f:
-            json.dump(retrieval_predictions, f, ensure_ascii=False, indent=2)
-        _write_models_sidecar(models_sidecar_json, qid_to_llm)
-    else:
-        unknown_qids: list[str] = []
-        primary_fail_count = 0
-        logger.info(
-            "real inference starting | n=%d | backend=hf_gemma_4_e4b_it | model=%s",
-            len(questions),
-            os.getenv("GEMMA4_E4B_IT_MODEL_PATH", "(default)"),
+    def _inference_cli_main() -> None:
+        forbid_dry_run("inference", dry_run=DRY_RUN)
+        if not DRY_RUN:
+            require_cuda("inference")
+            require_gemma_local("inference")
+            require_colembed_for_inference()
+        setup_logger()
+        questions = load_jsonl_data(QUESTION_FILE)
+        if MAX_QUESTIONS > 0:
+            questions = questions[:MAX_QUESTIONS]
+        predictions = {}
+        retrieval_predictions = {}
+        retrieval_output_json = (
+            INFERENCE_RETRIEVAL_JSON.strip()
+            if INFERENCE_RETRIEVAL_JSON.strip()
+            else _default_retrieval_json_path(OUTPUT_JSON)
         )
-        for question in tqdm(questions, desc="Processing Questions (real)"):
-            qid = _get_qid(question)
-            graph_path = os.path.join(GRAPH_DIR, f"{qid}_graph.graphml")
-            if not os.path.exists(graph_path):
-                logger.warning("qid=%s missing graph: %s", qid, graph_path)
-                predictions[qid] = "unknown"
-                retrieval_predictions[qid] = []
-                qid_to_llm[qid] = {"tier": "none", "model": "(none)", "base_url": "(none)", "reason": "missing-graph"}
-                unknown_qids.append(qid)
-                continue
-            try:
-                g = nx.read_graphml(graph_path)
-                retrieval_predictions[qid] = _fill_retrieval(question, g)
-                prompt = LLM_ANSWER_PROMPT.replace("{question}", _get_question_text(question)).replace(
-                    "{GraphML}", graph_to_str(g)
+        # qid -> LLM attribution (same shape as util.request.text_request_with_meta
+        # returns). Written to <output>_models.json as a sidecar; the main
+        # predictions file stays {qid: answer_str} so the QA evaluator is
+        # untouched.
+        qid_to_llm: dict[str, dict] = {}
+        models_sidecar_json = _default_models_sidecar_path(OUTPUT_JSON)
+
+        # INFERENCE_SLICE_DIR is preferred; INFERENCE_WEBQA_SLICE_DIR kept for backwards compat
+        _slice_for_retrieval = Path(os.getenv("INFERENCE_SLICE_DIR", os.getenv("INFERENCE_WEBQA_SLICE_DIR", str(_SLICE))))
+        _use_colembed_retrieval = os.getenv("INFERENCE_COLEMBED_RETRIEVAL", "1").strip().lower() not in (
+            "0",
+            "false",
+            "no",
+        )
+        _images_index = (
+            _load_slice_images_index(_slice_for_retrieval) if _use_colembed_retrieval else {}
+        )
+        _imgs_root = _default_mmqa_imgs_root() if _DATASET == "mmqa" else _default_webqa_imgs_root()
+        _topk_colembed = int(os.getenv("INFERENCE_COLEMBED_TOP_K", "10"))
+        _mmqa_colembed_img_cap = int(os.getenv("INFERENCE_MMQA_COLEMBED_IMG_CAP", "5"))
+
+        def _fill_retrieval(question_dict: dict, graph_obj: nx.Graph) -> list:
+            qid_res = _get_qid(question_dict)
+            if _use_colembed_retrieval:
+                md = question_dict.get("metadata") or {}
+                img_ids = md.get("image_doc_ids") or []
+                ranked, ok = colembed_maxsim_ranked_sources(
+                    _get_question_text(question_dict),
+                    img_ids,
+                    _images_index,
+                    _imgs_root,
+                    max(_topk_colembed, _mmqa_colembed_img_cap + 5),
                 )
-                answer, llm_meta = _hf_gemma_generate_text(prompt)
-                answer = (answer or "").strip()
-                if not answer or answer.lower() == "unknown":
-                    logger.warning("qid=%s LLM returned empty/unknown", qid)
+                co_cap = (
+                    min(_topk_colembed, max(1, _mmqa_colembed_img_cap))
+                    if (_DATASET == "mmqa" and ok and ranked)
+                    else _topk_colembed
+                )
+                if ok and ranked:
+                    trimmed = ranked[:co_cap]
+                    return _merge_colembed_with_graph_rank(
+                        trimmed, graph_obj, _topk_colembed, qid_res
+                    )
+            return canonical_graph_doc_candidates(
+                graph_obj, qid_res, capacity=max(_topk_colembed * 4, 32)
+            )[:_topk_colembed]
+
+        if DRY_RUN:
+            for question in tqdm(questions, desc="Processing Questions (dry-run)"):
+                qid = _get_qid(question)
+                graph_path = os.path.join(GRAPH_DIR, f"{qid}_graph.graphml")
+                if not os.path.exists(graph_path):
                     predictions[qid] = "unknown"
+                    retrieval_predictions[qid] = []
+                    qid_to_llm[qid] = {"tier": "dry-run", "model": "(none)", "base_url": "(none)", "reason": "missing-graph"}
+                    continue
+                try:
+                    g = nx.read_graphml(graph_path)
+                    retrieval_predictions[qid] = _fill_retrieval(question, g)
+                    answer = _extract_dry_run_answer_from_graph(g, _get_question_text(question))
+                    predictions[qid] = str(answer)
+                    qid_to_llm[qid] = {"tier": "dry-run", "model": "(none)", "base_url": "(none)", "reason": "graph-heuristic"}
+                except Exception:
+                    predictions[qid] = "unknown"
+                    retrieval_predictions[qid] = []
+                    qid_to_llm[qid] = {"tier": "dry-run", "model": "(none)", "base_url": "(none)", "reason": "graph-read-error"}
+            Path(OUTPUT_JSON).parent.mkdir(parents=True, exist_ok=True)
+            with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
+                json.dump(predictions, f, ensure_ascii=False, indent=2)
+            with open(retrieval_output_json, "w", encoding="utf-8") as f:
+                json.dump(retrieval_predictions, f, ensure_ascii=False, indent=2)
+            _write_models_sidecar(models_sidecar_json, qid_to_llm)
+        else:
+            unknown_qids: list[str] = []
+            primary_fail_count = 0
+            logger.info(
+                "real inference starting | n=%d | backend=hf_gemma_4_e4b_it | model=%s",
+                len(questions),
+                os.getenv("GEMMA4_E4B_IT_MODEL_PATH", "(default)"),
+            )
+            for question in tqdm(questions, desc="Processing Questions (real)"):
+                qid = _get_qid(question)
+                graph_path = os.path.join(GRAPH_DIR, f"{qid}_graph.graphml")
+                if not os.path.exists(graph_path):
+                    logger.warning("qid=%s missing graph: %s", qid, graph_path)
+                    predictions[qid] = "unknown"
+                    retrieval_predictions[qid] = []
+                    qid_to_llm[qid] = {"tier": "none", "model": "(none)", "base_url": "(none)", "reason": "missing-graph"}
+                    unknown_qids.append(qid)
+                    continue
+                try:
+                    g = nx.read_graphml(graph_path)
+                    retrieval_predictions[qid] = _fill_retrieval(question, g)
+                    _ans_tpl = MMQA_ANSWER_PROMPT if _DATASET == "mmqa" else LLM_ANSWER_PROMPT
+                    prompt = _ans_tpl.replace("{question}", _get_question_text(question)).replace(
+                        "{GraphML}", graph_to_str(g)
+                    )
+                    answer, llm_meta = _hf_gemma_generate_text(prompt)
+                    answer = (answer or "").strip()
+                    if not answer or answer.lower() == "unknown":
+                        logger.warning("qid=%s LLM returned empty/unknown", qid)
+                        predictions[qid] = "unknown"
+                        qid_to_llm[qid] = {
+                            "tier": "none", "model": "(none)",
+                            "base_url": "(none)", "reason": "empty-answer",
+                        }
+                        unknown_qids.append(qid)
+                    else:
+                        predictions[qid] = answer
+                        qid_to_llm[qid] = llm_meta
+                except Exception as exc:
+                    primary_fail_count += 1
+                    logger.warning(
+                        "qid=%s LLM raised (%s: %s)",
+                        qid, type(exc).__name__, exc,
+                    )
+                    predictions[qid] = "unknown"
+                    retrieval_predictions.setdefault(qid, [])
                     qid_to_llm[qid] = {
                         "tier": "none", "model": "(none)",
-                        "base_url": "(none)", "reason": "empty-answer",
+                        "base_url": "(none)",
+                        "reason": f"exception:{type(exc).__name__}",
                     }
                     unknown_qids.append(qid)
-                else:
-                    predictions[qid] = answer
-                    qid_to_llm[qid] = llm_meta
-            except Exception as exc:
-                primary_fail_count += 1
-                logger.warning(
-                    "qid=%s LLM raised (%s: %s)",
-                    qid, type(exc).__name__, exc,
-                )
-                predictions[qid] = "unknown"
-                retrieval_predictions.setdefault(qid, [])
-                qid_to_llm[qid] = {
-                    "tier": "none", "model": "(none)",
-                    "base_url": "(none)",
-                    "reason": f"exception:{type(exc).__name__}",
-                }
-                unknown_qids.append(qid)
-        with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
-            json.dump(predictions, f, ensure_ascii=False, indent=2)
-        with open(retrieval_output_json, "w", encoding="utf-8") as f:
-            json.dump(retrieval_predictions, f, ensure_ascii=False, indent=2)
-        _write_models_sidecar(models_sidecar_json, qid_to_llm)
-        logger.info(
-            "inference summary | total=%d | unknown=%d | exceptions=%d",
-            len(questions), len(unknown_qids), primary_fail_count,
-        )
-        if unknown_qids:
-            logger.warning(
-                "inference finished with %d 'unknown' predictions out of %d; "
-                "first 10 qids: %s",
-                len(unknown_qids), len(questions), unknown_qids[:10],
+            Path(OUTPUT_JSON).parent.mkdir(parents=True, exist_ok=True)
+            with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
+                json.dump(predictions, f, ensure_ascii=False, indent=2)
+            with open(retrieval_output_json, "w", encoding="utf-8") as f:
+                json.dump(retrieval_predictions, f, ensure_ascii=False, indent=2)
+            _write_models_sidecar(models_sidecar_json, qid_to_llm)
+            logger.info(
+                "inference summary | total=%d | unknown=%d | exceptions=%d",
+                len(questions), len(unknown_qids), primary_fail_count,
             )
+            if unknown_qids:
+                logger.warning(
+                    "inference finished with %d 'unknown' predictions out of %d; "
+                    "first 10 qids: %s",
+                    len(unknown_qids), len(questions), unknown_qids[:10],
+                )
+
+    run_with_session_stdio_tee(Path(__file__).resolve().parent, "inference", _inference_cli_main)

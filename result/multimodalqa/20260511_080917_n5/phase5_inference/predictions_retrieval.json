@@ -1,0 +1,362 @@
+{
+  "a33985b1e8b2502fc18cc8147dc27db8": [
+    {
+      "id": "4b6d3e469ff8395a0f8c1a13c0422937",
+      "score": 13.497566223144531,
+      "rank": 1,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "103e78f3b29095aef414c5b18532da2c",
+      "score": 13.417912483215332,
+      "rank": 2,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "c29dbf5e372abe403f66c4845bf924b5",
+      "score": 13.377233505249023,
+      "rank": 3,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "8b5a40ca458a36fb64a1785297b66fd8",
+      "score": 13.367011070251465,
+      "rank": 4,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "4e9411dae3cbab2b5223b9dabf825684",
+      "score": 13.342584609985352,
+      "rank": 5,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "ca2bf68495e00f43c248562bec134dbe",
+      "score": 13.256668090820312,
+      "rank": 6,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "cadbc8e1fb23d7fe15b88ea1141d2dd2",
+      "score": 13.224835395812988,
+      "rank": 7,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "86cac3116bf69a5e5b2c20866d03e53c",
+      "score": 13.169490814208984,
+      "rank": 8,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "ddf8b52a8400deaf05940c5cad8169cd",
+      "score": 13.110315322875977,
+      "rank": 9,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "c67ed9c5f5ba2a12fa95610d523fe28d",
+      "score": 13.028553009033203,
+      "rank": 10,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    }
+  ],
+  "710a6d2254076ea58756c6c7cc211f1e": [
+    {
+      "id": "4b6d3e469ff8395a0f8c1a13c0422937",
+      "score": 14.99139404296875,
+      "rank": 1,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "c29dbf5e372abe403f66c4845bf924b5",
+      "score": 14.6907320022583,
+      "rank": 2,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "8b5a40ca458a36fb64a1785297b66fd8",
+      "score": 14.58482551574707,
+      "rank": 3,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "103e78f3b29095aef414c5b18532da2c",
+      "score": 14.576972961425781,
+      "rank": 4,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "ca2bf68495e00f43c248562bec134dbe",
+      "score": 14.472835540771484,
+      "rank": 5,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "cadbc8e1fb23d7fe15b88ea1141d2dd2",
+      "score": 14.458690643310547,
+      "rank": 6,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "4e9411dae3cbab2b5223b9dabf825684",
+      "score": 14.433101654052734,
+      "rank": 7,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "ddf8b52a8400deaf05940c5cad8169cd",
+      "score": 14.317054748535156,
+      "rank": 8,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "9061cf6560fc6305fbd1575097c11aa4",
+      "score": 14.291486740112305,
+      "rank": 9,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "86cac3116bf69a5e5b2c20866d03e53c",
+      "score": 14.282681465148926,
+      "rank": 10,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    }
+  ],
+  "0d8f2779137fb47db953c4af5247ffe5": [
+    {
+      "id": "cadbc8e1fb23d7fe15b88ea1141d2dd2",
+      "score": 11.725942611694336,
+      "rank": 1,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "4b6d3e469ff8395a0f8c1a13c0422937",
+      "score": 11.526657104492188,
+      "rank": 2,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "103e78f3b29095aef414c5b18532da2c",
+      "score": 11.366209030151367,
+      "rank": 3,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "8b5a40ca458a36fb64a1785297b66fd8",
+      "score": 11.252257347106934,
+      "rank": 4,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "c29dbf5e372abe403f66c4845bf924b5",
+      "score": 11.234703063964844,
+      "rank": 5,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "4e9411dae3cbab2b5223b9dabf825684",
+      "score": 11.099457740783691,
+      "rank": 6,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "1c0d30d5776bb8ee954667c5277f4bf7",
+      "score": 11.077699661254883,
+      "rank": 7,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "9061cf6560fc6305fbd1575097c11aa4",
+      "score": 11.06464958190918,
+      "rank": 8,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "ca2bf68495e00f43c248562bec134dbe",
+      "score": 11.015806198120117,
+      "rank": 9,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "86cac3116bf69a5e5b2c20866d03e53c",
+      "score": 11.012035369873047,
+      "rank": 10,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    }
+  ],
+  "e240f5fe65b39eee70d3576cff88fe5a": [
+    {
+      "id": "ea2173ed76c57ccbe743e87c195f4a37",
+      "score": 23.515155792236328,
+      "rank": 1,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "ddf8b52a8400deaf05940c5cad8169cd",
+      "score": 23.245166778564453,
+      "rank": 2,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "4b6d3e469ff8395a0f8c1a13c0422937",
+      "score": 23.183767318725586,
+      "rank": 3,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "c29dbf5e372abe403f66c4845bf924b5",
+      "score": 23.039295196533203,
+      "rank": 4,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "4e9411dae3cbab2b5223b9dabf825684",
+      "score": 23.015003204345703,
+      "rank": 5,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "103e78f3b29095aef414c5b18532da2c",
+      "score": 22.84246063232422,
+      "rank": 6,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "1c0d30d5776bb8ee954667c5277f4bf7",
+      "score": 22.745813369750977,
+      "rank": 7,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "c67ed9c5f5ba2a12fa95610d523fe28d",
+      "score": 22.573501586914062,
+      "rank": 8,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "ca2bf68495e00f43c248562bec134dbe",
+      "score": 22.54397201538086,
+      "rank": 9,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "86cac3116bf69a5e5b2c20866d03e53c",
+      "score": 22.54000473022461,
+      "rank": 10,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    }
+  ],
+  "18ecd2ac6c0ac69993b92dc4b30137e8": [
+    {
+      "id": "ddf8b52a8400deaf05940c5cad8169cd",
+      "score": 20.875194549560547,
+      "rank": 1,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "4b6d3e469ff8395a0f8c1a13c0422937",
+      "score": 20.69615936279297,
+      "rank": 2,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "4e9411dae3cbab2b5223b9dabf825684",
+      "score": 20.689287185668945,
+      "rank": 3,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "c29dbf5e372abe403f66c4845bf924b5",
+      "score": 20.664852142333984,
+      "rank": 4,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "103e78f3b29095aef414c5b18532da2c",
+      "score": 20.56167221069336,
+      "rank": 5,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "c67ed9c5f5ba2a12fa95610d523fe28d",
+      "score": 20.327348709106445,
+      "rank": 6,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "1c0d30d5776bb8ee954667c5277f4bf7",
+      "score": 20.308507919311523,
+      "rank": 7,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "cadbc8e1fb23d7fe15b88ea1141d2dd2",
+      "score": 20.30359649658203,
+      "rank": 8,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "ca2bf68495e00f43c248562bec134dbe",
+      "score": 20.249935150146484,
+      "rank": 9,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "86cac3116bf69a5e5b2c20866d03e53c",
+      "score": 20.234582901000977,
+      "rank": 10,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    }
+  ]
+}

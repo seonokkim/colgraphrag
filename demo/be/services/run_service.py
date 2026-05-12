@@ -41,16 +41,23 @@ class RunService:
     def get_run_info(self) -> RunInfo:
         """Return run metadata."""
         report = self._load_eval_report()
-        inputs = report.get("inputs", {})
-        counts = report.get("counts", {})
+        inputs = report.get("inputs") or {}
+        counts = report.get("counts") or {}
+
+        run_id = inputs.get("mmgraphrag_run_id")
+        if not run_id:
+            run_id = self._result_dir.name
+
+        predictions_path = inputs.get("predictions_path") or ""
+        gold_jsonl_path = inputs.get("gold_jsonl_path") or ""
 
         return RunInfo(
-            run_id=inputs.get("mmgraphrag_run_id", self._result_dir.name),
+            run_id=str(run_id),
             generated_at=report.get("generated_at"),
-            total_questions=counts.get("All", 0),
-            scored_questions=counts.get("scored", 0),
-            predictions_path=inputs.get("predictions_path", ""),
-            gold_jsonl_path=inputs.get("gold_jsonl_path", ""),
+            total_questions=int(counts.get("All", 0) or 0),
+            scored_questions=int(counts.get("scored", 0) or 0),
+            predictions_path=str(predictions_path),
+            gold_jsonl_path=str(gold_jsonl_path),
             result_run_dir=str(self._result_dir),
             git_commit=inputs.get("git_commit"),
         )

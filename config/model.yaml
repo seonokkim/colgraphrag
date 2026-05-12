@@ -12,6 +12,11 @@ gemma:
   # Local-first: models/mllm/gemma-4-E4B-it (via download_models.py), fallback /workspace/models/...
   e4b_it_path: "models/mllm/gemma-4-E4B-it"
 
+# Ollama: `util/download_models.py --only ollama` runs `ollama pull` per tag below; ~/.ollama (default).
+ollama:
+  model: "gemma4:e2b"
+  model_e4b: "gemma4:e4b"
+
 colembed:
   # MaxSim retrieval (ColEmbed VL 3B v2)
   hf_repo_id: "nvidia/llama-nemotron-colembed-vl-3b-v2"

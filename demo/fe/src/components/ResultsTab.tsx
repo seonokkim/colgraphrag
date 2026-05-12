@@ -5,11 +5,12 @@ import { AnswerComparison } from '@/components/AnswerComparison';
 import { RetrievalList } from '@/components/RetrievalList';
 import { ImageViewer } from '@/components/ImageViewer';
 import { GraphViewer } from '@/components/GraphViewer';
-import type { QuestionSummary, QuestionDetail, GraphData } from '@/types';
+import type { QuestionSummary, QuestionDetail, GraphData, DatasetKey } from '@/types';
 
 interface ResultsTabProps {
   questions: QuestionSummary[];
   loading: boolean;
+  dataset: DatasetKey;
 }
 
 const QCATE_COLORS: Record<string, string> = {
@@ -18,10 +19,15 @@ const QCATE_COLORS: Record<string, string> = {
   color: 'bg-amber-50 text-amber-600',
   shape: 'bg-purple-50 text-purple-600',
   text: 'bg-red-50 text-red-600',
+  table: 'bg-orange-50 text-orange-600',
+  image: 'bg-pink-50 text-pink-600',
+  'table+image': 'bg-rose-50 text-rose-600',
+  'table+text': 'bg-yellow-50 text-yellow-600',
+  'text+image': 'bg-cyan-50 text-cyan-600',
   Others: 'bg-gray-50 text-gray-500',
 };
 
-export function ResultsTab({ questions, loading }: ResultsTabProps) {
+export function ResultsTab({ questions, loading, dataset }: ResultsTabProps) {
   const [selectedQid, setSelectedQid] = useState<string | null>(null);
   const [questionDetail, setQuestionDetail] = useState<QuestionDetail | null>(null);
   const [graphData, setGraphData] = useState<GraphData | null>(null);
@@ -34,6 +40,14 @@ export function ResultsTab({ questions, loading }: ResultsTabProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [questionDetail, detailLoading]);
 
+  // Reset selection when dataset changes
+  useEffect(() => {
+    setSelectedQid(null);
+    setQuestionDetail(null);
+    setGraphData(null);
+    setSearch('');
+  }, [dataset]);
+
   useEffect(() => {
     if (!selectedQid) {
       setQuestionDetail(null);
@@ -45,11 +59,11 @@ export function ResultsTab({ questions, loading }: ResultsTabProps) {
       setDetailLoading(true);
       setGraphLoading(true);
       try {
-        const detail = await api.getQuestion(qid);
+        const detail = await api.getQuestion(qid, dataset);
         setQuestionDetail(detail);
         if (detail.graph_available) {
           try {
-            setGraphData(await api.getGraph(qid));
+            setGraphData(await api.getGraph(qid, dataset));
           } catch {
             setGraphData(null);
           }
@@ -65,7 +79,7 @@ export function ResultsTab({ questions, loading }: ResultsTabProps) {
       }
     }
     loadDetail();
-  }, [selectedQid]);
+  }, [selectedQid, dataset]);
 
   const filtered = search.trim()
     ? questions.filter(
@@ -226,8 +240,17 @@ export function ResultsTab({ questions, loading }: ResultsTabProps) {
                           keywordsAnswer={questionDetail.keywords_answer}
                         />
                         <RetrievalList items={questionDetail.retrieval} />
-                        <ImageViewer facts={questionDetail.gold_facts} />
                         <GraphViewer data={graphData} loading={graphLoading} />
+                        {questionDetail.graph_available &&
+                          !graphLoading &&
+                          graphData === null && (
+                            <p className="text-[11px] text-[#b45309] mt-2 px-0.5 leading-relaxed">
+                              Knowledge graph failed to load (check Network tab for{' '}
+                              <code className="font-mono bg-[#fef3c7] px-1 rounded">/api/graphs/</code>
+                              ). Restart the demo backend if MMQA paths were updated.
+                            </p>
+                          )}
+                        <ImageViewer facts={questionDetail.gold_facts} dataset={dataset} />
                       </div>
                       {questionDetail.retrieval.length > 0 && (
                         <div className="mt-2 flex items-center gap-1.5 text-[12px] text-[#6a6a6a]">

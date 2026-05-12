@@ -1,0 +1,487 @@
+{
+  "schema_version": "1.6",
+  "generated_at": "2026-05-11T09:16:11.064278+00:00",
+  "inputs": {
+    "predictions_path": "/workspace/late-interaction-mm-graph-rag/result/multimodalqa/20260511_planAB_test_n5/phase5_inference/predictions.json",
+    "gold_jsonl_path": "/workspace/late-interaction-mm-graph-rag/result/multimodalqa/20260511_planAB_test_n5/mmqa_slice/mmqa_questions.jsonl",
+    "split_label": "mmqa_dev_n5",
+    "mmgraphrag_run_id": null,
+    "git_commit": null
+  },
+  "counts": {
+    "All": 100,
+    "scored": 5,
+    "Unimodal": 55,
+    "Multimodal": 45,
+    "by_Qcate": {
+      "Compare(Compose(TableQ,ImageQ),TableQ)": 1,
+      "Compose(ImageQ,TableQ)": 1,
+      "Compose(TextQ,TableQ)": 1,
+      "ImageListQ": 1,
+      "TableQ": 1
+    }
+  },
+  "leaderboard_summary": {
+    "All": {
+      "QA-FL": 38.3441754765926,
+      "QA-Acc": 40.0,
+      "QA": 23.511482643140873
+    },
+    "Unimodal": {
+      "QA-FL": 44.460542398526194,
+      "QA-Acc": 50.0,
+      "QA": 31.624055062653067
+    },
+    "Multimodal": {
+      "QA-FL": 34.26659752863688,
+      "QA-Acc": 33.33333333333333,
+      "QA": 18.10310103013274
+    },
+    "source": "ACL-25 Query-Driven-Multimodal-GraphRAG Table 2 + WebQA EvalAI wire names (Fluency/Accuracy/mul -> QA-FL/QA-Acc/QA)."
+  },
+  "retrieval_summary": {
+    "multimodal": {
+      "num_queries": 99,
+      "num_queries_missing_predictions": 376,
+      "num_queries_with_empty_gold_relevance": 0,
+      "metrics": {
+        "k=1": {
+          "hit@k": 0.050505,
+          "recall@k": 0.00202,
+          "mrr@k": 0.050505,
+          "ndcg@k": 0.050505,
+          "map@k": 0.050505,
+          "retrieval_f1": 0.003885
+        },
+        "k=3": {
+          "hit@k": 0.050505,
+          "recall@k": 0.006061,
+          "mrr@k": 0.050505,
+          "ndcg@k": 0.050505,
+          "map@k": 0.050505,
+          "retrieval_f1": 0.010823
+        },
+        "k=5": {
+          "hit@k": 0.050505,
+          "recall@k": 0.010101,
+          "mrr@k": 0.050505,
+          "ndcg@k": 0.050505,
+          "map@k": 0.050505,
+          "retrieval_f1": 0.016835
+        },
+        "k=10": {
+          "hit@k": 0.050505,
+          "recall@k": 0.016162,
+          "mrr@k": 0.050505,
+          "ndcg@k": 0.043946,
+          "map@k": 0.040404,
+          "retrieval_f1": 0.024487
+        }
+      },
+      "num_queries_in_stratum": 99
+    },
+    "unimodal": {
+      "num_queries": 1,
+      "num_queries_missing_predictions": 4,
+      "num_queries_with_empty_gold_relevance": 0,
+      "metrics": {
+        "k=1": {
+          "hit@k": 0.0,
+          "recall@k": 0.0,
+          "mrr@k": 0.0,
+          "ndcg@k": 0.0,
+          "map@k": 0.0,
+          "retrieval_f1": 0.0
+        },
+        "k=3": {
+          "hit@k": 0.0,
+          "recall@k": 0.0,
+          "mrr@k": 0.0,
+          "ndcg@k": 0.0,
+          "map@k": 0.0,
+          "retrieval_f1": 0.0
+        },
+        "k=5": {
+          "hit@k": 0.0,
+          "recall@k": 0.0,
+          "mrr@k": 0.0,
+          "ndcg@k": 0.0,
+          "map@k": 0.0,
+          "retrieval_f1": 0.0
+        },
+        "k=10": {
+          "hit@k": 0.0,
+          "recall@k": 0.0,
+          "mrr@k": 0.0,
+          "ndcg@k": 0.0,
+          "map@k": 0.0,
+          "retrieval_f1": 0.0
+        }
+      },
+      "num_queries_in_stratum": 1
+    },
+    "by_Qcate": {
+      "text": {
+        "num_queries": 100,
+        "num_queries_missing_predictions": 380,
+        "num_queries_with_empty_gold_relevance": 0,
+        "metrics": {
+          "k=1": {
+            "hit@k": 0.05,
+            "recall@k": 0.002,
+            "mrr@k": 0.05,
+            "ndcg@k": 0.05,
+            "map@k": 0.05,
+            "retrieval_f1": 0.003846
+          },
+          "k=3": {
+            "hit@k": 0.05,
+            "recall@k": 0.006,
+            "mrr@k": 0.05,
+            "ndcg@k": 0.05,
+            "map@k": 0.05,
+            "retrieval_f1": 0.010714
+          },
+          "k=5": {
+            "hit@k": 0.05,
+            "recall@k": 0.01,
+            "mrr@k": 0.05,
+            "ndcg@k": 0.05,
+            "map@k": 0.05,
+            "retrieval_f1": 0.016667
+          },
+          "k=10": {
+            "hit@k": 0.05,
+            "recall@k": 0.016,
+            "mrr@k": 0.05,
+            "ndcg@k": 0.043506,
+            "map@k": 0.04,
+            "retrieval_f1": 0.024242
+          }
+        },
+        "num_queries_in_qcate": 100
+      }
+    },
+    "by_modality": {
+      "text": {
+        "num_queries": 100,
+        "num_queries_missing_predictions": 380,
+        "num_queries_with_empty_gold_relevance": 0,
+        "metrics": {
+          "k=1": {
+            "hit@k": 0.0,
+            "recall@k": 0.0,
+            "mrr@k": 0.0,
+            "ndcg@k": 0.0,
+            "map@k": 0.0,
+            "retrieval_f1": 0.0
+          },
+          "k=3": {
+            "hit@k": 0.0,
+            "recall@k": 0.0,
+            "mrr@k": 0.0,
+            "ndcg@k": 0.0,
+            "map@k": 0.0,
+            "retrieval_f1": 0.0
+          },
+          "k=5": {
+            "hit@k": 0.0,
+            "recall@k": 0.0,
+            "mrr@k": 0.0,
+            "ndcg@k": 0.0,
+            "map@k": 0.0,
+            "retrieval_f1": 0.0
+          },
+          "k=10": {
+            "hit@k": 0.05,
+            "recall@k": 0.01,
+            "mrr@k": 0.008333,
+            "ndcg@k": 0.007549,
+            "map@k": 0.002226,
+            "retrieval_f1": 0.011111
+          }
+        },
+        "num_queries_in_modality": 100
+      },
+      "image": {
+        "num_queries": 99,
+        "num_queries_missing_predictions": 376,
+        "num_queries_with_empty_gold_relevance": 0,
+        "metrics": {
+          "k=1": {
+            "hit@k": 0.050505,
+            "recall@k": 0.003608,
+            "mrr@k": 0.050505,
+            "ndcg@k": 0.050505,
+            "map@k": 0.050505,
+            "retrieval_f1": 0.006734
+          },
+          "k=3": {
+            "hit@k": 0.050505,
+            "recall@k": 0.010823,
+            "mrr@k": 0.050505,
+            "ndcg@k": 0.050505,
+            "map@k": 0.050505,
+            "retrieval_f1": 0.017825
+          },
+          "k=5": {
+            "hit@k": 0.050505,
+            "recall@k": 0.018038,
+            "mrr@k": 0.050505,
+            "ndcg@k": 0.050505,
+            "map@k": 0.050505,
+            "retrieval_f1": 0.026582
+          },
+          "k=10": {
+            "hit@k": 0.050505,
+            "recall@k": 0.018038,
+            "mrr@k": 0.050505,
+            "ndcg@k": 0.032774,
+            "map@k": 0.025253,
+            "retrieval_f1": 0.022957
+          }
+        },
+        "num_queries_in_modality": 99
+      },
+      "table": {
+        "num_queries": 100,
+        "num_queries_missing_predictions": 380,
+        "num_queries_with_empty_gold_relevance": 0,
+        "metrics": {
+          "k=1": {
+            "hit@k": 0.0,
+            "recall@k": 0.0,
+            "mrr@k": 0.0,
+            "ndcg@k": 0.0,
+            "map@k": 0.0,
+            "retrieval_f1": 0.0
+          },
+          "k=3": {
+            "hit@k": 0.0,
+            "recall@k": 0.0,
+            "mrr@k": 0.0,
+            "ndcg@k": 0.0,
+            "map@k": 0.0,
+            "retrieval_f1": 0.0
+          },
+          "k=5": {
+            "hit@k": 0.0,
+            "recall@k": 0.0,
+            "mrr@k": 0.0,
+            "ndcg@k": 0.0,
+            "map@k": 0.0,
+            "retrieval_f1": 0.0
+          },
+          "k=10": {
+            "hit@k": 0.05,
+            "recall@k": 0.05,
+            "mrr@k": 0.006429,
+            "ndcg@k": 0.015952,
+            "map@k": 0.006429,
+            "retrieval_f1": 0.011111
+          }
+        },
+        "num_queries_in_modality": 100
+      }
+    },
+    "overall": {
+      "num_queries": 100,
+      "num_queries_missing_predictions": 380,
+      "num_queries_with_empty_gold_relevance": 0,
+      "metrics": {
+        "k=1": {
+          "hit@k": 0.05,
+          "recall@k": 0.002,
+          "mrr@k": 0.05,
+          "ndcg@k": 0.05,
+          "map@k": 0.05,
+          "retrieval_f1": 0.003846
+        },
+        "k=3": {
+          "hit@k": 0.05,
+          "recall@k": 0.006,
+          "mrr@k": 0.05,
+          "ndcg@k": 0.05,
+          "map@k": 0.05,
+          "retrieval_f1": 0.010714
+        },
+        "k=5": {
+          "hit@k": 0.05,
+          "recall@k": 0.01,
+          "mrr@k": 0.05,
+          "ndcg@k": 0.05,
+          "map@k": 0.05,
+          "retrieval_f1": 0.016667
+        },
+        "k=10": {
+          "hit@k": 0.05,
+          "recall@k": 0.016,
+          "mrr@k": 0.05,
+          "ndcg@k": 0.043506,
+          "map@k": 0.04,
+          "retrieval_f1": 0.024242
+        }
+      },
+      "num_queries_in_stratum": 100
+    },
+    "k_gen": 10,
+    "inputs": {
+      "retrieval_rankings_json": "/workspace/late-interaction-mm-graph-rag/result/multimodalqa/20260511_planAB_test_n5/phase5_inference/predictions_retrieval.json",
+      "gold_jsonl": "/workspace/late-interaction-mm-graph-rag/result/multimodalqa/20260511_planAB_test_n5/mmqa_slice/mmqa_questions.jsonl",
+      "ks": [
+        1,
+        3,
+        5,
+        10
+      ]
+    },
+    "metric_definitions": {
+      "hit@k": "At least one gold source in top-k (macro-averaged).",
+      "recall@k": "#hits_in_topk / #relevant.",
+      "mrr@k": "1 / rank of first hit in top-k.",
+      "ndcg@k": "DCG(binary hits) / IDCG over min(|R|, k).",
+      "map@k": "Truncated AP at k; denominator is min(|R|, k).",
+      "retrieval_f1": "Per-query set F1 over top-k vs gold (WebQA-main baseline README wire name)."
+    }
+  },
+  "scores": {
+    "All": {
+      "list_f1": 2.0,
+      "list_em": 2.0,
+      "f1": 2.0,
+      "em": 2.0,
+      "webqa_acc_approx": 40.0,
+      "webqa_qa_fl": 38.3441754765926,
+      "webqa_qa": 23.511482643140873,
+      "qa_fl": 38.3441754765926,
+      "qa_acc": 40.0,
+      "qa": 23.511482643140873,
+      "list_f1_keyword": 2.0,
+      "list_em_keyword": 2.0
+    },
+    "Unimodal": {
+      "list_f1": 1.8181818181818181,
+      "list_em": 1.8181818181818181,
+      "f1": 1.8181818181818181,
+      "em": 1.8181818181818181,
+      "webqa_acc_approx": 50.0,
+      "webqa_qa_fl": 44.460542398526194,
+      "webqa_qa": 31.624055062653067,
+      "qa_fl": 44.460542398526194,
+      "qa_acc": 50.0,
+      "qa": 31.624055062653067,
+      "list_f1_keyword": 1.8181818181818181,
+      "list_em_keyword": 1.8181818181818181
+    },
+    "Multimodal": {
+      "list_f1": 2.2222222222222223,
+      "list_em": 2.2222222222222223,
+      "f1": 2.2222222222222223,
+      "em": 2.2222222222222223,
+      "webqa_acc_approx": 33.33333333333333,
+      "webqa_qa_fl": 34.26659752863688,
+      "webqa_qa": 18.10310103013274,
+      "qa_fl": 34.26659752863688,
+      "qa_acc": 33.33333333333333,
+      "qa": 18.10310103013274,
+      "list_f1_keyword": 2.2222222222222223,
+      "list_em_keyword": 2.2222222222222223
+    },
+    "by_Qcate_webqa_acc_approx": {
+      "Compare(Compose(TableQ,ImageQ),TableQ)": 0.0,
+      "Compose(ImageQ,TableQ)": 0.0,
+      "Compose(TextQ,TableQ)": 100.0,
+      "ImageListQ": 0.0,
+      "TableQ": 100.0
+    },
+    "by_Qcate_webqa_qa_fl": {
+      "Compare(Compose(TableQ,ImageQ),TableQ)": 25.813333085463285,
+      "Compose(ImageQ,TableQ)": 22.67715641004913,
+      "Compose(TextQ,TableQ)": 54.30930309039822,
+      "ImageListQ": 25.672974671746253,
+      "TableQ": 63.248110125306134
+    },
+    "by_Qcate_webqa_qa": {
+      "Compare(Compose(TableQ,ImageQ),TableQ)": 0.0,
+      "Compose(ImageQ,TableQ)": 0.0,
+      "Compose(TextQ,TableQ)": 54.30930309039822,
+      "ImageListQ": 0.0,
+      "TableQ": 63.248110125306134
+    },
+    "by_Qcate_qa_fl": {
+      "Compare(Compose(TableQ,ImageQ),TableQ)": 25.813333085463285,
+      "Compose(ImageQ,TableQ)": 22.67715641004913,
+      "Compose(TextQ,TableQ)": 54.30930309039822,
+      "ImageListQ": 25.672974671746253,
+      "TableQ": 63.248110125306134
+    },
+    "by_Qcate_qa_acc": {
+      "Compare(Compose(TableQ,ImageQ),TableQ)": 0.0,
+      "Compose(ImageQ,TableQ)": 0.0,
+      "Compose(TextQ,TableQ)": 100.0,
+      "ImageListQ": 0.0,
+      "TableQ": 100.0
+    },
+    "by_Qcate_qa": {
+      "Compare(Compose(TableQ,ImageQ),TableQ)": 0.0,
+      "Compose(ImageQ,TableQ)": 0.0,
+      "Compose(TextQ,TableQ)": 54.30930309039822,
+      "ImageListQ": 0.0,
+      "TableQ": 63.248110125306134
+    },
+    "by_Qcate_list_em_keyword": {
+      "Compare(Compose(TableQ,ImageQ),TableQ)": 0.0,
+      "Compare(TableQ,Compose(TableQ,TextQ))": 0.0,
+      "Compose(ImageQ,TableQ)": 0.0,
+      "Compose(ImageQ,TextQ)": 0.0,
+      "Compose(TableQ,ImageListQ)": 0.0,
+      "Compose(TableQ,TextQ)": 0.0,
+      "Compose(TextQ,ImageListQ)": 0.0,
+      "Compose(TextQ,TableQ)": 8.333333333333332,
+      "ImageListQ": 0.0,
+      "ImageQ": 0.0,
+      "Intersect(ImageListQ,TableQ)": 0.0,
+      "TableQ": 3.3333333333333335,
+      "TextQ": 0.0
+    },
+    "by_Qcate_list_f1_keyword": {
+      "Compare(Compose(TableQ,ImageQ),TableQ)": 0.0,
+      "Compare(TableQ,Compose(TableQ,TextQ))": 0.0,
+      "Compose(ImageQ,TableQ)": 0.0,
+      "Compose(ImageQ,TextQ)": 0.0,
+      "Compose(TableQ,ImageListQ)": 0.0,
+      "Compose(TableQ,TextQ)": 0.0,
+      "Compose(TextQ,ImageListQ)": 0.0,
+      "Compose(TextQ,TableQ)": 8.333333333333332,
+      "ImageListQ": 0.0,
+      "ImageQ": 0.0,
+      "Intersect(ImageListQ,TableQ)": 0.0,
+      "TableQ": 3.3333333333333335,
+      "TextQ": 0.0
+    }
+  },
+  "diagnostics": {
+    "num_prediction_keys": 5,
+    "non_empty_string_values": 5,
+    "unique_answer_strings": 4,
+    "min_answer_len": 4,
+    "max_answer_len": 9,
+    "values_placeholder_or_unknown_like": 2,
+    "suspicious_few_unique_short_strings": false,
+    "hint": null,
+    "webqa_fluency_backend": "bart",
+    "webqa_fluency_model": "facebook/bart-large-cnn",
+    "webqa_fluency_effective_backend": "bart"
+  },
+  "definitions": {
+    "Unimodal": "metadata.webqa.multimodal == false (val: no img_posFacts; test: no img_Facts)",
+    "Multimodal": "metadata.webqa.multimodal == true",
+    "list_em_list_f1": "list EM / list F1 from webqa_qa_scoring.evaluate_predictions; reference Query-Driven-Multimodal-GraphRAG eval/evaluate.py.",
+    "webqa_acc_approx": "Category-aware approximation of WebQA QA-Acc (Qibin Chen / WebQA-main/eval_webqa.md); color/shape/YesNo -> keyword-set F1, number -> numeric-token F1, text/Others/choose -> raw bag-of-words recall. Matches the metric WebQA's leaderboard uses on val when keyword_answer is not available.",
+    "list_em_keyword_list_f1_keyword": "Same MMQA list EM / list F1 evaluator as above, but both gold and prediction are first reduced with qcate_keyword_tokens(). For WebQA the raw gold is always a full natural-language sentence, so the unfiltered list_em collapses to 0; the keyword variant projects both sides onto the same Qcate-filtered bag the WebQA leaderboard uses against its hidden Keywords_answer, so EM/F1 can actually fire.",
+    "webqa_qa_fl": "WebQA QA-FL (Fluency): BARTScore (default facebook/bart-large-cnn) normalized to [0,1] via exp(avg_log_p / WEBQA_FLUENCY_SCALE); see util/webqa_fluency.py. Falls back to ROUGE-L F1 when BART weights are unavailable (diagnostics.webqa_fluency_effective_backend=='rouge'). Aggregated to the leaderboard [0,100] scale.",
+    "webqa_qa": "WebQA QA leaderboard score: per-sample FL_i * Acc_i averaged over the split. Matches the 'mul' field returned by the WebQA EvalAI server (reference/code/WebQA-main/WebQA-main/demo/Call_WebQA_eval_server_locally.py). Per-sample product then macro mean -- not product of macro means.",
+    "qa_fl_qa_acc_qa": "Paper-consistent aliases introduced in schema 1.5. ``qa_fl`` / ``qa_acc`` / ``qa`` are identical values to ``webqa_qa_fl`` / ``webqa_acc_approx`` / ``webqa_qa`` above, but named after the ACL-25 Query-Driven-Multimodal-GraphRAG paper (Table 2) and the WebQA EvalAI server wire format (Fluency/Accuracy/mul -> QA-FL/QA-Acc/QA). Use these for any leaderboard-facing report / README table.",
+    "retrieval_summary": "IR metrics for the ranked-source list fed to the generator (schema 1.6+). Filled from --retrieval_rankings_json (or result/<RUN_ID>/retrieval_rankings.json) using eval/evaluate_retrieval.py: overall / multimodal / unimodal / by_Qcate / by_modality buckets, each with hit@k / recall@k / mrr@k / ndcg@k / map@k / retrieval_f1 across the --retrieval_ks sweep. ``k_gen`` is the operating point the answer generator actually sees (default 10)."
+  }
+}

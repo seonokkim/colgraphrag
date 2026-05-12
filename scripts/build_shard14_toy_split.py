@@ -5,8 +5,10 @@ Build WebQA shard_00014 toy split for pipeline testing.
 Creates pipeline input files (webqa_slice/) from VAL set questions
 that reference images in shard_00014 (image IDs 30070000–30074999).
 
-Output: /workspace/data/webqa/WebQA_imgs_7z_chunks/webqa_shard14_toy/
-  webqa_slice/
+Default output layout (under repo ``data/webqa/``):
+
+  WebQA_imgs_7z_chunks/webqa_shard14_toy/
+    webqa_slice/
     webqa_questions.jsonl
     webqa_images.jsonl
     webqa_texts.jsonl
@@ -26,14 +28,32 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+_WEBQA_DATA = _REPO_ROOT / "data" / "webqa"
+
+
 SHARD14_IMG_ID_MIN = 30070000
 SHARD14_IMG_ID_MAX = 30074999
-SHARD14_IMG_PATH = "/workspace/data/webqa/WebQA_imgs_7z_chunks/imgs/all_png/shard_00014"
+SHARD14_IMG_PATH = str(
+    _WEBQA_DATA / "WebQA_imgs_7z_chunks" / "imgs" / "all_png" / "shard_00014"
+)
 
-DEFAULT_VLP_PREDS = "/workspace/data/webqa/WebQA-main/baseline_output_files/Baseline_prediction_files_on_Val/VLP_x101_combinedTraining_val_end2end_predictions.json"
-DEFAULT_IMG_TSV = "/workspace/data/webqa/WebQA-main/baseline_output_files/Baseline_prediction_files_on_Val/img_queries_VLP_x101fpn_combinedTraining_val_beam5_img_step11_cleaned.tsv"
-DEFAULT_TXT_TSV = "/workspace/data/webqa/WebQA-main/baseline_output_files/Baseline_prediction_files_on_Val/txt_queries_VLP_x101fpn_combinedTraining_val_beam5_txt_step11_cleaned.tsv"
-DEFAULT_OUTPUT_ROOT = "/workspace/data/webqa/WebQA_imgs_7z_chunks/webqa_shard14_toy"
+_BASELINE = (
+    _WEBQA_DATA
+    / "WebQA-main"
+    / "baseline_output_files"
+    / "Baseline_prediction_files_on_Val"
+)
+DEFAULT_VLP_PREDS = str(_BASELINE / "VLP_x101_combinedTraining_val_end2end_predictions.json")
+DEFAULT_IMG_TSV = str(
+    _BASELINE / "img_queries_VLP_x101fpn_combinedTraining_val_beam5_img_step11_cleaned.tsv"
+)
+DEFAULT_TXT_TSV = str(
+    _BASELINE / "txt_queries_VLP_x101fpn_combinedTraining_val_beam5_txt_step11_cleaned.tsv"
+)
+DEFAULT_OUTPUT_ROOT = str(
+    _WEBQA_DATA / "WebQA_imgs_7z_chunks" / "webqa_shard14_toy"
+)
 
 
 def load_vlp_predictions(path: str) -> dict:
