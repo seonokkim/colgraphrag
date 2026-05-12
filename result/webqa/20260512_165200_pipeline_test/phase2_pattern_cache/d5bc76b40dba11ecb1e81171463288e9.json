@@ -1,0 +1,40 @@
+{
+  "response": "[\"Watch Brand\", \"Building\"]##Watch Brand <|> has_ad_on <|> Building<|COMPLETE|>",
+  "question": {
+    "Guid": "d5bc76b40dba11ecb1e81171463288e9",
+    "Q": "Which watch brand has an ad on the Sanai building ?",
+    "A": [
+      "Casio's watch brand has an ad on the Sanai building."
+    ],
+    "Keywords_A": "Casio",
+    "Qcate": "Others",
+    "split": "val",
+    "img_posFacts": [
+      {
+        "image_id": "30071432",
+        "title": "WebQA image 30071432",
+        "caption": "",
+        "url": "data/webqa/WebQA_imgs_7z_chunks/imgs/all_png/shard_00014/00071432_30071432.png"
+      }
+    ],
+    "txt_posFacts": [
+      {
+        "snippet_id": "d5bc76b40dba11ecb1e81171463288e9_txt",
+        "fact": "Casio"
+      }
+    ],
+    "metadata": {
+      "image_doc_ids": [
+        "30071432"
+      ],
+      "text_doc_ids": [
+        "d5bc76b40dba11ecb1e81171463288e9_txt"
+      ]
+    }
+  },
+  "llm": {
+    "tier": "hf_gemma_4_e4b_it",
+    "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+    "base_url": "(in-process)"
+  }
+}

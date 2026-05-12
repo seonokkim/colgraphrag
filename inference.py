@@ -1,3 +1,10 @@
+"""Phase 5 — GraphRAG 추론 CLI.
+
+질문 JSONL과 4단계에서 저장한 질문별 GraphML을 읽습니다. (선택) ColEmbed로 메타의
+``image_doc_ids`` 후보 이미지에 대해 질문–이미지 MaxSim 순위를 매기고, 그 결과는
+``*_retrieval.json`` 등으로만 기록됩니다(프롬프트에는 합치지 않음). 최종 답은
+질문 + ``graph_to_str``로 만든 그래프 텍스트를 HF Gemma 4 E4B IT에 넣어 생성합니다.
+"""
 import io
 import json
 import logging
@@ -26,6 +33,7 @@ from PIL import Image, ImageDraw, ImageFont
 from transformers import AutoProcessor, AutoModel
 from tqdm import tqdm
 
+# INFERENCE_DRY_RUN=1 이면 ColEmbed·Gemma 없이 그래프 휴리스틱만 사용
 DRY_RUN = os.getenv("INFERENCE_DRY_RUN", "0") == "1"
 _HF_GEMMA_MODULE = None
 
@@ -58,6 +66,9 @@ def _hf_gemma_generate_text(prompt: str) -> tuple[str, dict]:
         "base_url": "(in-process)",
     }
     return text, llm_meta
+
+
+# --- 경로·질문 파일·출력은 환경변수로 덮어쓸 수 있음(노트북/CI에서 RUN_ID·슬라이스 위치 맞출 때 사용) ---
 _BASE_DIR = Path(__file__).resolve().parent
 _DATASET = os.getenv("MMGRAPHRAG_DATASET", "webqa").strip().lower()
 _RUN_ID = resolve_pipeline_run_id(_BASE_DIR, _DATASET)
@@ -87,6 +98,7 @@ def _colembed_fallback_log_file() -> Path:
         _INFER_COLEMBED_FALLBACK_LOG = new_session_log_path(_BASE_DIR, "inference_colembed")
     return _INFER_COLEMBED_FALLBACK_LOG
 
+# ColEmbed MaxSim 전역 캐시(이 프로세스에서 한 번만 로드)
 model = None
 processor = None
 logger = logging.getLogger("colembed_mm_graph_rag")
@@ -193,6 +205,7 @@ def _tokens_for_retrieval_attrs(node_or_edge_attrs: Mapping, qid: str) -> list[s
     return [_strip_question_id_prefix(qid, ch) for ch in chunks]
 
 
+# --- 그래프만 쓰는 후보 순위: 노드·엣지의 doc_id/source_id에 그래프 차수(연결 강도)를 가중치로 부여 ---
 def canonical_graph_doc_candidates(graph: nx.Graph, qid: str, capacity: int = 64) -> list[dict]:
     """Distinct doc/table IDs from graph nodes & edges with degree-derived salience."""
     scores: dict[str, float] = {}
@@ -281,6 +294,7 @@ def _merge_colembed_with_graph_rank(
     return merged
 
 
+# --- 슬라이스 JSONL의 path/url/id로 디스크 이미지 경로 해석 (ColEmbed MaxSim 입력) ---
 def _default_webqa_imgs_root() -> Path:
     env_root = os.getenv("WEBQA_DATA_ROOT", "").strip()
     if env_root:
@@ -722,6 +736,8 @@ def graph_to_graphml_str(graph):
         graphml_str = byte_output.read().decode('utf-8')
     return graphml_str
 
+
+# --- Gemma 프롬프트에 들어가는 그래프 요약(픽셀 없음; 노드/엣지의 entity·description 텍스트만) ---
 def graph_to_str(graph):
     output = []
     text_nodes = []
@@ -793,6 +809,8 @@ def graph_to_str(graph):
 
     return '\n'.join(output)
 
+
+# 다른 모듈용: 경로 리스트에 대한 ColEmbed 상위 n 이미지 인덱스(추론 CLI 메인 루프는 graph_to_str 경로 사용)
 def text_to_image_feature(image_paths, texts, n=None):
     """ColEmbed MaxSim shortlist: returns indices of the top-``n`` images for ``texts[0]``.
 
@@ -869,6 +887,8 @@ if __name__ == "__main__":
     from util.pipeline_session_log import run_with_session_stdio_tee
 
     def _inference_cli_main() -> None:
+        # dry-run: Gemma/ColEmbed 실호출 없이 그래프 휴리스틱 답 + retrieval 슬롯만 채움
+        # 실제 실행: ColEmbed(옵션)로 retrieval_predictions 기록 후, 답은 graph_to_str + Gemma
         forbid_dry_run("inference", dry_run=DRY_RUN)
         if not DRY_RUN:
             require_cuda("inference")
@@ -906,6 +926,7 @@ if __name__ == "__main__":
         _topk_colembed = int(os.getenv("INFERENCE_COLEMBED_TOP_K", "10"))
         _mmqa_colembed_img_cap = int(os.getenv("INFERENCE_MMQA_COLEMBED_IMG_CAP", "5"))
 
+        # 질문 메타의 이미지 id 후보만 ColEmbed로 재순위; 실패 시 그래프 위상 순위로 대체
         def _fill_retrieval(question_dict: dict, graph_obj: nx.Graph) -> list:
             qid_res = _get_qid(question_dict)
             if _use_colembed_retrieval:
@@ -978,6 +999,7 @@ if __name__ == "__main__":
                 try:
                     g = nx.read_graphml(graph_path)
                     retrieval_predictions[qid] = _fill_retrieval(question, g)
+                    # retrieval 순위는 prompt에 넣지 않음; 컨텍스트는 그래프 텍스트 전부
                     _ans_tpl = MMQA_ANSWER_PROMPT if _DATASET == "mmqa" else LLM_ANSWER_PROMPT
                     prompt = _ans_tpl.replace("{question}", _get_question_text(question)).replace(
                         "{GraphML}", graph_to_str(g)

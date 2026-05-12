@@ -1,3 +1,12 @@
+"""
+Phase 4 — assemble per-question knowledge graphs.
+
+For each slice question, ``main`` loads Phase 3 cache files named ``{qid}_{text_doc_id}.json``,
+parses ``entity`` / ``relationship`` lines (``##``-delimited) from each ``response`` text, merges
+slice tables and optional image captions, builds a NetworkX graph, writes ``{qid}_graph.graphml``,
+and emits a sibling ``{qid}_graph.models.json`` so GraphML/XML limits do not hide LLM lineage.
+"""
+
 import io
 import numbers
 import os
@@ -13,6 +22,7 @@ import urllib.parse
 
 from util.result_layout import resolve_pipeline_run_id
 
+# Extraction payloads use ``##`` record boundaries and ``<|>`` field separators (parity with extraction.py).
 record_delimiter = "##"
 tuple_delimiter = "<|>"
 join_descriptions_flag = True
@@ -66,7 +76,15 @@ def table_to_markdown(table):
         markdown += "| " + " | ".join(cell['text'] for cell in row) + " |\n"
     return markdown.strip()
 
+
 def construct_graph(text_answers, table, question, texts, images, owner_qid: str = ""):
+    """Turn Phase-3 cache dicts plus slice media cues into one undirected ``nx.Graph``.
+
+    ``text_answers`` rows carry the ``response`` string that ``extraction.py`` emitted; records are split on
+    ``record_delimiter`` / ``tuple_delimiter`` into ``entity`` and ``relationship`` tuples. Duplicate entities
+    merge descriptions and provenance; optional ``table`` / ``images`` add TABLE/IMAGE scaffolding nodes wired
+    to titles. Internal node keys look like ``NAME_UPPER + " Bt: " + TYPE`` so heterogeneous sources stay unique.
+    """
     graph = nx.Graph()
 
     entity_dict = {}
@@ -305,7 +323,9 @@ def construct_graph(text_answers, table, question, texts, images, owner_qid: str
             )
     return graph
 
+
 def graph_to_graphml_str(graph):
+    """Return UTF-8 GraphML bytes decoded to str --- helper for dumps/tests; CLI uses ``nx.write_graphml``."""
     with io.BytesIO() as byte_output:
         nx.write_graphml(graph, byte_output)
         byte_output.seek(0)
@@ -313,7 +333,14 @@ def graph_to_graphml_str(graph):
     return graphml_str
 
 
+# Example artifacts (notebook env often writes under ``phase4_graphs_out/``; CLI default targets ``phase4_graphs_real/`` unless overridden):
+#   ``<CONSTRUCT_OUTPUT_GRAPH_DIR>/<Guid>_graph.graphml``
+#   ``<CONSTRUCT_OUTPUT_GRAPH_DIR>/<Guid>_graph.models.json``  # summarizes upstream extraction ``llm`` entries
+
+
 def main():
+    """Hydrate slices + caches, synthesize graphs for each capped question batch, persist GraphML sidecars."""
+
     base_dir = Path(__file__).resolve().parent
     _dataset = os.getenv("MMGRAPHRAG_DATASET", "webqa").strip().lower()
     run_id = resolve_pipeline_run_id(base_dir, _dataset)
@@ -342,6 +369,8 @@ def main():
         "CONSTRUCT_EXTRACTION_CACHE",
         str(base_dir / "result" / run_id / "phase3_extraction_cache"),
     )
+    # Default directory name differs from notebooks that export to ``phase4_graphs_out/`` ---
+    # always set ``CONSTRUCT_OUTPUT_GRAPH_DIR`` when swapping layouts between ``*_real`` / ``*_out`` trees.
     output_graph_dir = os.getenv(
         "CONSTRUCT_OUTPUT_GRAPH_DIR",
         str(base_dir / "result" / run_id / "phase4_graphs_real"),
@@ -358,6 +387,7 @@ def main():
     images = {img.get('id', img.get('image_id', '')): img for img in images}
     texts = load_jsonl_data(text_file)
     texts = {text.get('id', text.get('snippet_id', '')): text for text in texts}
+    # One GraphML (+ JSON lineage sidecar) per question row encountered before ``CONSTRUCT_MAX_QUESTIONS`` truncation.
     for question in questiones:
         qid = question.get("qid") or question.get("Guid") or ""
         md = question.get("metadata") or {}

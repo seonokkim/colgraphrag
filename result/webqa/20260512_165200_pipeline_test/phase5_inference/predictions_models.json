@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "run_id": "webqa/20260512_165200_pipeline_test",
+    "backend": "hf_gemma_4_e4b_it",
+    "model_path": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it"
+  },
+  "qid_to_llm": {
+    "d5cb27900dba11ecb1e81171463288e9": {
+      "tier": "hf_gemma_4_e4b_it",
+      "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+      "base_url": "(in-process)"
+    },
+    "d5ca85b00dba11ecb1e81171463288e9": {
+      "tier": "hf_gemma_4_e4b_it",
+      "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+      "base_url": "(in-process)"
+    },
+    "d5c827980dba11ecb1e81171463288e9": {
+      "tier": "hf_gemma_4_e4b_it",
+      "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+      "base_url": "(in-process)"
+    },
+    "d5c8f1780dba11ecb1e81171463288e9": {
+      "tier": "hf_gemma_4_e4b_it",
+      "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+      "base_url": "(in-process)"
+    },
+    "d5c2d1760dba11ecb1e81171463288e9": {
+      "tier": "hf_gemma_4_e4b_it",
+      "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+      "base_url": "(in-process)"
+    }
+  },
+  "summary": {
+    "by_tier": {
+      "hf_gemma_4_e4b_it": 5
+    },
+    "by_model": {
+      "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it": 5
+    }
+  }
+}

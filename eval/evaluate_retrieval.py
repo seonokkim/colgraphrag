@@ -99,6 +99,15 @@ def _extract_relevant_by_modality(example: dict) -> Dict[str, Set[str]]:
     return out
 
 
+def _gold_example_qid(example: dict) -> str:
+    """Primary key for a gold JSONL row: MMQA uses ``qid``, WebQA slice exports use ``Guid``."""
+    for key in ("qid", "Guid"):
+        v = example.get(key)
+        if v is not None and str(v).strip():
+            return str(v)
+    return ""
+
+
 def _stratum_for_example(ex: dict) -> str:
     md = ex.get("metadata") or {}
     w = md.get("webqa") or {}
@@ -121,7 +130,12 @@ def _load_gold_relevance(gold_jsonl_path: Path, qrels_json_path: Path | None) ->
         raw = json.loads(qrels_json_path.read_text(encoding="utf-8"))
         return {str(qid): set(_parse_ranked_ids(v)) for qid, v in raw.items()}
     examples = read_jsonl(gold_jsonl_path)
-    return {str(ex["qid"]): _extract_mmq_relevant_ids(ex) for ex in examples}
+    out: Dict[str, Set[str]] = {}
+    for ex in examples:
+        q = _gold_example_qid(ex)
+        if q:
+            out[q] = _extract_mmq_relevant_ids(ex)
+    return out
 
 
 def _dcg_at_k(binary_rels: List[int], k: int) -> float:
@@ -269,9 +283,15 @@ def evaluate_retrieval_stratified(
     def gold_subset(rows: List[dict]) -> Dict[str, Set[str]]:
         if qrels_json_path is not None:
             all_q = _load_gold_relevance(gold_jsonl_path, qrels_json_path)
-            qids = {str(ex["qid"]) for ex in rows}
+            qids = {_gold_example_qid(ex) for ex in rows}
+            qids.discard("")
             return {q: all_q[q] for q in qids if q in all_q}
-        return {str(ex["qid"]): _extract_mmq_relevant_ids(ex) for ex in rows}
+        rel: Dict[str, Set[str]] = {}
+        for ex in rows:
+            q = _gold_example_qid(ex)
+            if q:
+                rel[q] = _extract_mmq_relevant_ids(ex)
+        return rel
 
     out: dict = {}
     for name, rows in by_stratum.items():
@@ -294,7 +314,11 @@ def evaluate_retrieval_stratified(
     out["by_Qcate"] = by_qcate_out
 
     if qrels_json_path is None:
-        modality_gold = {str(ex["qid"]): _extract_relevant_by_modality(ex) for ex in examples}
+        modality_gold: Dict[str, Dict[str, Set[str]]] = {}
+        for ex in examples:
+            q = _gold_example_qid(ex)
+            if q:
+                modality_gold[q] = _extract_relevant_by_modality(ex)
         out["by_modality"] = _evaluate_retrieval_by_modality(predictions, modality_gold, ks)
 
     full = _load_gold_relevance(gold_jsonl_path, qrels_json_path)
