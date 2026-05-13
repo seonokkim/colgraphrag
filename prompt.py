@@ -1,3 +1,10 @@
+# =============================================================================
+# LLM 프롬프트 템플릿 모음.
+# - 문자열 본문은 모델 입력용이므로 영어 유지. 각 상수 위 주석으로 용도·단계를 한글로 설명.
+# - Phase 2~5와 추론 보조용(이미지/테이블 등) 프롬프트가 혼재하므로, 호출부와 함께 읽는 것이 안전함.
+# =============================================================================
+
+# --- Phase 2 (pattern.py): 질문으로부터 소형 그래프 패턴(엔티티 타입 나열 + ## 로 구분된 관계 템플릿) 생성 ---
 GRAPH_PATTERN_PROMPT = r'''-Goal-
 Given a question, generate a compact graph pattern for downstream relation extraction.
 
@@ -19,6 +26,7 @@ Output format:
 Question: {question}
 Output:'''
 
+# --- Phase 3 (extraction.py): Phase 2 패턴을 바탕으로 본문 텍스트에서 entity / relationship 레코드 추출 ---
 EXTRACT_RELATION_PROMPT = r'''-Goal-
 Extract entities and relations from input text following the provided graph pattern guidance.
 
@@ -46,6 +54,7 @@ Input text:
 
 Output:'''
 
+# --- 보조: 질문 문장에서 시각적 특성·이미지 관련 명시적 표현만 추출(태그 <|Answer|> 래핑) ---
 IMAGE_FEATURE_PROMPT = r'''-Goal-
 You are an AI assistant tasked with extracting explicit image descriptions and visual characteristics from given questions or tasks.
 
@@ -98,6 +107,7 @@ Output:<|Answer|>["a little girl holding a doll on the cover"]<|\Answer|>
 Input: {question}
 ######################
 Output: {Your final output must be a list wrapped in <|Answer|> and <|\Answer|> tags, without any other explanation}'''
+# --- 보조: 질문에서 그래프 검색용 헤드 엔티티(명시적 언급만) 목록 추출 ---
 HEAD_NODE_PROMPT = r'''-Goal-
 Entity Extraction from Questions: Given a question, identify and extract the relevant entities that would be used to search a knowledge graph to answer the question.
 
@@ -138,6 +148,7 @@ Output: <|Answer|>["Nintendo 64"]<|\Answer|>
 Input: {question}
 ######################
 Output: {Your final output must be a list wrapped in <|Answer|> and <|\Answer|> tags, without any other explanation}'''
+# --- 보조: (질문, 모델 초안 답)에서 최종 짧은 답만 정제 ---
 GET_FINAL_ANSWER_PROMPT = r'''--Goal--
 Extract the final answer from the given questions and answers.
 
@@ -160,6 +171,7 @@ Question: {question}
 My answer: {my_answer}
 ######################
 Output:{Your answer}'''
+# --- Phase 5 (inference.py, WebQA·일반): graph_to_str 요약 + 질문으로 완전한 답 문장 생성 ---
 LLM_ANSWER_PROMPT = r'''Goal
 Answer the question based on the knowledge graph. Provide a complete, self-contained answer sentence.
 
@@ -200,6 +212,7 @@ Knowledge Graph:
 {GraphML}
 ######################
 Output:'''
+# --- Phase 5 (inference.py, MMQA): 그래프 사실만 사용, list-F1에 맞춘 짧은 스팬/리스트 형식 답변 ---
 MMQA_ANSWER_PROMPT = r'''Goal
 Answer the question using ONLY the facts that appear in the knowledge graph below.
 
@@ -223,6 +236,7 @@ Knowledge Graph:
 {GraphML}
 ######################
 Output:'''
+# --- 보조: 마크다운 테이블 + 질문에서 후보 엔티티(표 내 등장만) 추출 ---
 TABLE_QA_PROMPT = r'''Goal
 Given a question and a table in markdown format (some questions may require multiple entity jumps to get the answer), identify candidate entities from the description field of the knowledge graph table node that may help answer the question. And return the answer in the specified format.
 
@@ -271,6 +285,7 @@ Table content(markdown):
 {Table content}
 ######################
 Output:{Your final output must be a list wrapped in <|Answer|> and <|\Answer|> tags, without any other explanation}'''
+# --- 보조: 답에 이미지가 필요한지 판단하고, 이미지 엔티티별 구체 질의 목록 생성 ---
 IMAGEQ_PROMPT = '''-Goal-
 Image Query Assistant: Your task is to determine whether image information is needed to answer a given query. If it is needed, the relevant image modal entity must be identified and a specific question about the image must be asked to that image entity. Results are returned in a format that does not contain any additional information. Only return the list, don't give any other explanation.
 
@@ -377,6 +392,7 @@ Knowledge Graph:
 {GraphML}
 ######################
 Output:{Your final output must be a list wrapped in <|Answer|> and <|\Answer|> tags, without any other explanation}'''
+# --- 보조: 이미지·캡션 맥락에서 극히 간결한 사실 답 ---
 IMAGE_QA_PROMPT = r'''-Goal-
 Provide extremely concise and factual answers about the content of the image and the image captions
 
@@ -397,6 +413,7 @@ Question: {question}
 Image_title: {title}
 ######################
 Output:'''
+# --- 보조: 현재 그래프만으로 질문 답 가능 여부(Yes/No)와 이유 ---
 DETERMINE_ANSWER_PROMPT = r'''Goal
 Given a question and a knowledge graph, determine if the question can be answered based on the current knowledge graph. Pay close attention to the specific details requested in the question.
 
@@ -421,6 +438,7 @@ Knowledge Graph:
 ######################
 Question: {question}
 Output:{Strictly formatted returns}'''
+# --- 보조: 3장 후보 이미지 중 설명과 가장 일치하는 1장 선택(1/2/3) ---
 SELECT_IMAGE_PROMPT = r'''--Objective--
 You are given three pictures (labeled 1, 2 and 3) and a description in English. Analyze the content of all three pictures carefully. It is possible that multiple pictures fit the description well. You will need to look closely at the given description in English and determine which one fits the given description the best.
 

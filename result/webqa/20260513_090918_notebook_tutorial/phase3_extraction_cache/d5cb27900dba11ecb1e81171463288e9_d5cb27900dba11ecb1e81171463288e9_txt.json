@@ -1,0 +1,15 @@
+{
+  "response": "\"entity\"<|>\"Coprinus comatus\"<|>\"Mushroom\"<|>\"A type of mushroom\"##\"entity\"<|>\"Amanita nothofagi\"<|>\"Mushroom\"<|>\"A type of mushroom\"##\"relationship\"<|>\"Coprinus comatus\"<|>\"Amanita nothofagi\"<|>\"have different cap colors\"",
+  "llm": {
+    "tier": "hf_gemma_4_e4b_it",
+    "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+    "base_url": "(in-process)"
+  },
+  "qid": "d5cb27900dba11ecb1e81171463288e9_d5cb27900dba11ecb1e81171463288e9_txt",
+  "text_content": "Question: Are the tops of the caps of Coprinus comatus and Amanita nothofagi mushrooms the same color ? Answer: The tops of the caps of Coprinus comatus and Amanita nothofagi mushrooms are not the same color as each other.",
+  "graph_pattern": {
+    "type_list": [],
+    "edge_list": [],
+    "question_text": ""
+  }
+}

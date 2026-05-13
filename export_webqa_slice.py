@@ -1,16 +1,19 @@
 """
-Export WebQA rows into MMQA-shaped jsonl files under result/<RUN_ID>/webqa_slice/.
+Phase 1(데이터 준비) — WebQA 레코드를 MMQA 형태 JSONL 슬라이스로 변환.
 
-This keeps extraction.py / construct.py / inference.py on jsonl + qid without importing
-other repos. Run from colgraphrag_webqa:
+목적:
+  - ``extraction.py``, ``construct.py``, ``inference.py`` 가 공통으로 ``qid`` + jsonl 만 보도록
+    외부 WebQA JSON 구조 의존을 이 스크립트 한 곳에 가둠.
 
-  python export_webqa_slice.py
+동작:
+  - 프로파일(``WEBQA_RUN_PROFILE``)과 원본 JSON 경로에 따라 test/val 풀을 고르고,
+    각 레코드를 ``webqa_questions.jsonl`` 한 줄(메타에 text/image id, 더미 테이블 id) +
+    대응 텍스트/이미지 행으로 전개.
+  - WebQA 전용 테이블 본문은 없으므로 ``webqa_tables.jsonl`` 은 플레이스홀더 1행.
 
-Env:
-  WEBQA_RUN_PROFILE=test_full (default) | val_n100
-  WEBQA_JSON_FILE=... (defaults: WebQA_test.json for test_full, train_val for val_n100)
-  MMGRAPHRAG_RUN_ID=...
-  WEBQA_EXPORT_MAX=100  (val_n100 default cap; test_full: set >0 only to truncate e.g. smoke)
+실행 예: ``python export_webqa_slice.py``
+
+환경 변수: WEBQA_RUN_PROFILE, WEBQA_JSON_FILE, MMGRAPHRAG_RUN_ID, WEBQA_EXPORT_MAX 등
 """
 
 from __future__ import annotations
@@ -31,6 +34,7 @@ from util.result_layout import webqa_stamped_run_id
 
 
 def _fact_text(fact: dict | str) -> str:
+    """txt/img 팩트 dict 또는 문자열에서 슬라이스용 짧은 본문 텍스트로 압축."""
     if isinstance(fact, str):
         return fact.strip()
     parts: list[str] = []
@@ -45,6 +49,7 @@ def _fact_text(fact: dict | str) -> str:
 
 
 def _dummy_table() -> dict:
+    """그래프 파이프라인이 table_id 를 기대하므로 넣는 고정 더미 테이블 1개."""
     return {
         "id": "webqa_dummy_table",
         "title": "WebQA placeholder",
@@ -57,6 +62,10 @@ def _dummy_table() -> dict:
 
 
 def _build_rows_for_record(rec: dict, test_mode: bool) -> tuple[dict, list[dict], list[dict]]:
+    """단일 WebQA 레코드 → (질문 행, 텍스트 행 목록, 이미지 행 목록).
+
+    test_mode: test 스플릿(txt_Facts/img_Facts) vs 학습용 pos/neg 팩트 선택.
+    """
     guid = str(rec["Guid"])
     q = str(rec.get("Q", ""))
     text_rows: list[dict] = []
@@ -133,6 +142,7 @@ def _build_rows_for_record(rec: dict, test_mode: bool) -> tuple[dict, list[dict]
 
 
 def main() -> None:
+    """프로파일별로 풀을 자른 뒤 ``webqa_slice`` 디렉터리에 4종 jsonl + meta 작성."""
     base = Path(__file__).resolve().parent
     run_id = os.getenv("MMGRAPHRAG_RUN_ID", "").strip() or webqa_stamped_run_id("export")
     profile = resolve_profile()

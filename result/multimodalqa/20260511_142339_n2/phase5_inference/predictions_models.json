@@ -1,0 +1,27 @@
+{
+  "meta": {
+    "run_id": "multimodalqa/20260511_142339_n2",
+    "backend": "hf_gemma_4_e4b_it",
+    "model_path": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it"
+  },
+  "qid_to_llm": {
+    "a33985b1e8b2502fc18cc8147dc27db8": {
+      "tier": "hf_gemma_4_e4b_it",
+      "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+      "base_url": "(in-process)"
+    },
+    "710a6d2254076ea58756c6c7cc211f1e": {
+      "tier": "hf_gemma_4_e4b_it",
+      "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+      "base_url": "(in-process)"
+    }
+  },
+  "summary": {
+    "by_tier": {
+      "hf_gemma_4_e4b_it": 2
+    },
+    "by_model": {
+      "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it": 2
+    }
+  }
+}

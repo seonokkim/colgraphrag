@@ -67,24 +67,33 @@ eval/evaluate_*_qa.py      Phase 6  WebQA or MMQA metrics
 
 ## Prerequisites
 
+Reference stack for **Linux GPU servers** (e.g. RunPod) and the **PyTorch `cu124`**
+wheels pinned in `requirements.txt`. This is **not** the only valid setup:
+`--dry-run` smoke tests and single-model phases need far less VRAM.
+
 | Item | Details |
 |------|---------|
-| **OS** | Linux x86_64 (recommended; matches published PyTorch **`cu124`** wheels) |
-| **Python** | **3.10+** (`requirements.txt` targets 3.10+; **3.11** is common in CI/notebooks) |
-| **GPU** | NVIDIA GPU with a driver compatible with **CUDA 12.4** (newer drivers reporting CUDA 12.6 / 12.8 in `nvidia-smi` are usually fine) |
-| **CUDA runtime** | No full system CUDA toolkit required for the default setup: pip installs **PyTorch `+cu124`**, which bundles the needed NVIDIA libraries. |
-| **PyTorch** | Pinned in `requirements.txt`: **torch 2.6.0+cu124**, **torchvision 0.21.0+cu124**, **torchaudio 2.6.0+cu124** (`--index-url https://download.pytorch.org/whl/cu124`) |
-| **VRAM** | **~16 GB** when loading **ColEmbed 3B** and **Gemma 4 E4B IT** together (more headroom recommended) |
-| **Hardware** | A100 / H100 class recommended for throughput; other datacenter GPUs (e.g. **A6000**) work if VRAM fits |
-| **Model weights** | **Not included in the repo.** Download **Gemma**, **ColEmbed**, and (for WebQA **QA-FL**) **BART** via [Models](#models) before non-`--dry-run` runs. |
+| **OS** | **Linux x86_64** (recommended). Best match for published PyTorch CUDA wheels and typical cloud GPU images. |
+| **Python** | **3.10+** (`requirements.txt`); **3.11** is recommended for notebooks / CI parity. |
+| **Virtual env** | `python3.11 -m venv .venv` → `source .venv/bin/activate` → `pip install -r requirements.txt` |
+| **GPU** | NVIDIA GPU. **A6000 48GB-class** is a practical target for development / PoC; **A100 / H100-class** helps throughput on full runs. |
+| **NVIDIA Driver** | Must support **CUDA 12.x** for the shipped PyTorch **`+cu124`** wheels. `nvidia-smi` may show a newer CUDA version (e.g. 12.6–12.8); that is usually still compatible with the cu124 wheel. NVIDIA documents packaged Linux drivers for CUDA 12.4 from **550.54** onward; for CUDA 12.x minor compatibility, **525.60.13+** is cited as a lower bound — in practice aim for **driver 550+** to reduce surprises. See the [CUDA 12.4 Toolkit release notes (PDF)](https://docs.nvidia.com/cuda/archive/12.4.1/pdf/CUDA_Toolkit_Release_Notes.pdf). |
+| **CUDA runtime** | **No full system CUDA toolkit** is required for the default setup: `pip` installs the PyTorch CUDA wheel, which pulls the needed runtime libraries. If you **compile** custom CUDA extensions, you may still need a toolkit / `nvcc`. |
+| **PyTorch** | Pinned: **torch 2.6.0+cu124**, **torchvision 0.21.0+cu124**, **torchaudio 2.6.0+cu124** with `--index-url https://download.pytorch.org/whl/cu124`. See also [PyTorch previous versions](https://pytorch.org/get-started/previous-versions/). |
+| **VRAM** | **At least ~24 GB** recommended if **ColEmbed 3B** and **Gemma 4 E4B IT** appear in the same heavy phase (KV cache, activations, fragmentation). **48 GB+** is recommended for comfortable end-to-end work; treat **~16 GB** only as a **smoke-test** or strictly **sequential** loading lower bound, not a stable dual-model budget. |
+| **RAM / vCPU** | **~50 GB+ RAM** and **9+ vCPU** are reasonable when JSONL I/O, caches, GraphML, evaluation, and the optional FastAPI demo all run on the same machine — CPU RAM can become a bottleneck too. |
+| **Hardware** | Throughput favors **A100 / H100**; **A6000 48 GB** remains a good fit for development, demos, and toy slices. |
+| **Model weights** | **Not included in the repo.** Download **Gemma**, **ColEmbed**, and (for WebQA **QA-FL**) **BART** under `models/` or your network volume — see [Models](#models) before non-`--dry-run` runs. |
+
+> **One-line summary:** Use **Linux x86_64**, a **Python 3.11** venv, and **PyTorch 2.6.0 + cu124** from the pinned index. Prefer a **CUDA 12.x–capable NVIDIA driver (550+)** rather than installing a full CUDA toolkit; rely on the PyTorch wheel for runtime libraries. For **ColEmbed + Gemma** in realistic workloads, plan **24 GB+ VRAM** and treat **48 GB-class** GPUs as the comfortable default.
 
 ### Install
 
 From the **repository root**:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python3.11 -m venv .venv       # or: python3 -m venv .venv  (Python 3.10+)
+source .venv/bin/activate       # Windows: .venv\Scripts\activate
 pip install --upgrade pip
 pip install -r requirements.txt
 ```

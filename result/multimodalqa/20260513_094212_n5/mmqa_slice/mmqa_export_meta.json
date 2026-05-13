@@ -1,0 +1,11 @@
+{
+  "created_at": "2026-05-13T09:42:20.696044+00:00",
+  "split": "dev",
+  "source_data_dir": "/workspace/late-interaction-mm-graph-rag/data/multimodalqa/dataset",
+  "source_questions_file": "/workspace/late-interaction-mm-graph-rag/data/multimodalqa/dataset/MMQA_dev_n100.jsonl",
+  "n_questions": 100,
+  "n_texts": 925,
+  "n_images": 257,
+  "n_tables": 30,
+  "out_dir": "/workspace/late-interaction-mm-graph-rag/result/multimodalqa/20260513_094212_n5/mmqa_slice"
+}

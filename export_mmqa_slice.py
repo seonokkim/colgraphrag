@@ -1,22 +1,18 @@
 """
-Export MMQA toy slice to pipeline-standard JSONL files under result/<RUN_ID>/mmqa_slice/.
+Phase 1(데이터 준비) — MultimodalQA 슬라이스를 파이프라인 표준 JSONL 로 내보냄.
 
-MMQA data is already pipeline-compatible (qid/question/metadata fields match).
-This script normalises file names and records a build manifest.
+역할:
+  - MMQA 원천(``data/multimodalqa/dataset/``)의 ``MMQA_{split}_n*.jsonl`` 등을 읽어
+    ``result/<RUN_ID>/mmqa_slice/`` 아래에 통일된 파일명으로 복사·정규화.
+  - 이후 Phase 2~5 는 항상 ``mmqa_questions.jsonl``, ``mmqa_texts.jsonl`` … 만 보면 됨.
 
-Input:  data/multimodalqa/dataset/MMQA_{split}_n{N}.jsonl  (and texts/images/tables)
-Output: result/multimodalqa/<YYYYMMDD_HHMMSS>_mmqa_export/mmqa_slice/ when MMGRAPHRAG_RUN_ID is unset (see util/result_layout.py).
-  mmqa_questions.jsonl
-  mmqa_texts.jsonl
-  mmqa_images.jsonl
-  mmqa_tables.jsonl
-  mmqa_export_meta.json
+입력·출력 요약:
+  - 입력: ``MMQA_{split}_n{N}.jsonl`` + 동일 접두의 texts/images/tables
+  - 출력: ``mmqa_questions.jsonl``, ``mmqa_texts.jsonl``, ``mmqa_images.jsonl``,
+    ``mmqa_tables.jsonl``, ``mmqa_export_meta.json``
+  - ``MMGRAPHRAG_RUN_ID`` 미설정 시 ``util/result_layout`` 규칙으로 스탬프 run_id 생성.
 
-Env:
-  MMQA_SPLIT         dev (default) | train | test
-  MMQA_DATA_DIR      path to dataset dir (default: <repo>/data/multimodalqa/dataset)
-  MMGRAPHRAG_RUN_ID  shared run ID
-  MMQA_SLICE_DIR     override output directory
+환경 변수(영문 키 유지): MMQA_SPLIT, MMQA_DATA_DIR, MMGRAPHRAG_RUN_ID, MMQA_SLICE_DIR
 """
 
 from __future__ import annotations
@@ -30,7 +26,7 @@ from util.result_layout import ensure_multimodalqa_run_id_has_stamp_prefix, mult
 
 
 def _find_mmqa_file(data_dir: Path, glob_prefix: str) -> Path | None:
-    """Return newest matching MMQA_<prefix>_n*.jsonl, or None."""
+    """``MMQA_<prefix>_n*.jsonl`` 중 수정 시각 기준 최신 1개(정렬 역순 첫 항)."""
     for p in sorted(data_dir.glob(f"{glob_prefix}_n*.jsonl"), reverse=True):
         return p
     return None
@@ -45,6 +41,7 @@ def _iter_jsonl(path: Path):
 
 
 def main() -> None:
+    """질문·컨텍스트 jsonl 을 mmqa_slice 로 풀 카피하고 메타 JSON 기록."""
     base = Path(__file__).resolve().parent
     raw = os.getenv("MMGRAPHRAG_RUN_ID", "").strip()
     run_id = (

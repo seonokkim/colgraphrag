@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-05-11T14:32:45.082079+00:00",
+  "leaderboard_summary": {
+    "All": {
+      "QA-FL": 58.778706607852186,
+      "QA-Acc": 100.0,
+      "QA": 58.778706607852186
+    },
+    "Unimodal": {
+      "QA-FL": 63.248110125306134,
+      "QA-Acc": 100.0,
+      "QA": 63.248110125306134
+    },
+    "Multimodal": {
+      "QA-FL": 54.30930309039822,
+      "QA-Acc": 100.0,
+      "QA": 54.30930309039822
+    },
+    "source": "ACL-25 Query-Driven-Multimodal-GraphRAG Table 2 + WebQA EvalAI wire names (Fluency/Accuracy/mul -> QA-FL/QA-Acc/QA)."
+  },
+  "inputs": {
+    "predictions_path": "/workspace/late-interaction-mm-graph-rag/result/multimodalqa/20260511_142339_n2/phase5_inference/predictions.json",
+    "gold_jsonl_path": "/workspace/late-interaction-mm-graph-rag/result/multimodalqa/20260511_142339_n2/mmqa_slice/mmqa_questions.jsonl",
+    "split_label": "mmqa_dev_n2",
+    "mmgraphrag_run_id": "multimodalqa/20260511_142339_n2",
+    "git_commit": null
+  }
+}

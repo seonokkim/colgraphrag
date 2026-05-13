@@ -1,0 +1,20 @@
+{
+  "response": "\"entity\"<|>\"Why Me?\"<|>\"Movie\"<|>\"A 1990 American caper comedy film\"##\"entity\"<|>\"Gene Quintano\"<|>\"Person\"<|>\"Director of Why Me?\"##\"entity\"<|>\"Christopher Lambert\"<|>\"Person\"<|>\"Actor in Why Me?\"##\"entity\"<|>\"Kim Greist\"<|>\"Person\"<|>\"Actor in Why Me?\"##\"entity\"<|>\"Christopher Lloyd\"<|>\"Person\"<|>\"Actor in Why Me?\"##\"entity\"<|>\"J. T. Walsh\"<|>\"Person\"<|>\"Actor in Why Me?\"##\"entity\"<|>\"Donald E. Westlake\"<|>\"Person\"<|>\"Screenwriter for Why Me?\"##\"entity\"<|>\"Leonard Maas Jr.\"<|>\"Person\"<|>\"Screenwriter for Why Me?\"##\"entity\"<|>\"David Koepp\"<|>\"Person\"<|>\"Pseudonym of Leonard Maas Jr.\"##\"entity\"<|>\"Why Me?\"<|>\"Movie\"<|>\"Is based on a book series\"##\"entity\"<|>\"What?\"<|>\"Movie\"<|>\"A 1972 comedy film\"##\"entity\"<|>\"Roman Polanski\"<|>\"Person\"<|>\"Director of What?\"##\"entity\"<|>\"Marcello Mastroianni\"<|>\"Person\"<|>\"Actor in What?\"##\"entity\"<|>\"Sydne Rome\"<|>\"Person\"<|>\"Actor in What?\"##\"entity\"<|>\"Hugh Griffith\"<|>\"Person\"<|>\"Actor in What?\"##\"relationship\"<|>\"Why Me?\"<|>\"Gene Quintano\"<|>\"has_actor\"##\"relationship\"<|>\"Why Me?\"<|>\"Christopher Lambert\"<|>\"has_actor\"##\"relationship\"<|>\"Why Me?\"<|>\"Kim Greist\"<|>\"has_actor\"##\"relationship\"<|>\"Why Me?\"<|>\"Christopher Lloyd\"<|>\"has_actor\"##\"relationship\"<|>\"Why Me?\"<|>\"J. T. Walsh\"<|>\"has_actor\"##\"relationship\"<|>\"Why Me?\"<|>\"Donald E. Westlake\"<|>\"has_actor\"##\"relationship\"<|>\"Why Me?\"<|>\"Leonard Maas Jr.\"<|>\"has_actor\"##\"relationship\"<|>\"What?\"<|>\"Roman Polanski\"<|>\"has_actor\"##\"",
+  "llm": {
+    "tier": "hf_gemma_4_e4b_it",
+    "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+    "base_url": "(in-process)"
+  },
+  "qid": "710a6d2254076ea58756c6c7cc211f1e_b3048808d8fc1c00a22f3a0fd3f17f10",
+  "text_content": "Why Me? is a 1990 American caper comedy film directed by Gene Quintano and starring Christopher Lambert, Kim Greist, Christopher Lloyd, and J. T. Walsh. The screenplay is credited to Donald E. Westlake and Leonard Maas Jr. (a pseudonym of David Koepp), and is based on the fifth book in Westlake's series of John Dortmunder novels.\nWhat? (Che?, also variously titled Quoi?, Was?, and Diary of Forbidden Dreams) is a 1972 comedy film written and directed by Roman Polanski and starring Marcello Mastroianni, Sydne Rome and Hugh Griffith.",
+  "graph_pattern": {
+    "type_list": [
+      "\"Movie\"",
+      "\"Person\""
+    ],
+    "edge_list": [
+      "Movie <|> has_actor <|> Person"
+    ],
+    "question_text": "When was the movie that had Ben Piazza in the role of Bob Whitewood released?"
+  }
+}

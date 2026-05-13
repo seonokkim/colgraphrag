@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d8" for="edge" attr.name="doc_id" attr.type="string" />
+  <key id="d7" for="edge" attr.name="source_id" attr.type="string" />
+  <key id="d6" for="edge" attr.name="description" attr.type="string" />
+  <key id="d5" for="edge" attr.name="weight" attr.type="double" />
+  <key id="d4" for="node" attr.name="doc_id" attr.type="string" />
+  <key id="d3" for="node" attr.name="source_id" attr.type="string" />
+  <key id="d2" for="node" attr.name="description" attr.type="string" />
+  <key id="d1" for="node" attr.name="type" attr.type="string" />
+  <key id="d0" for="node" attr.name="entity_name" attr.type="string" />
+  <graph edgedefault="undirected">
+    <node id="481 8TH AVE, NEW YORK Bt: LOCATION">
+      <data key="d0">481 8th Ave, New York</data>
+      <data key="d1">Location</data>
+      <data key="d2">Address where the buildings and flagpole are located</data>
+      <data key="d3">d5c8f1780dba11ecb1e81171463288e9_d5c8f1780dba11ecb1e81171463288e9_txt</data>
+      <data key="d4">d5c8f1780dba11ecb1e81171463288e9_txt</data>
+    </node>
+    <node id="FLAG POLE Bt: OBJECT">
+      <data key="d0">flag pole</data>
+      <data key="d1">Object</data>
+      <data key="d2">The object used for comparison</data>
+      <data key="d3">d5c8f1780dba11ecb1e81171463288e9_d5c8f1780dba11ecb1e81171463288e9_txt</data>
+      <data key="d4">d5c8f1780dba11ecb1e81171463288e9_txt</data>
+    </node>
+    <node id="BUILDINGS Bt: STRUCTURE">
+      <data key="d0">buildings</data>
+      <data key="d1">Structure</data>
+      <data key="d2">The structures being compared</data>
+      <data key="d3">d5c8f1780dba11ecb1e81171463288e9_d5c8f1780dba11ecb1e81171463288e9_txt</data>
+      <data key="d4">d5c8f1780dba11ecb1e81171463288e9_txt</data>
+    </node>
+    <edge source="FLAG POLE Bt: OBJECT" target="BUILDINGS Bt: STRUCTURE">
+      <data key="d5">1.0</data>
+      <data key="d6">are not shorter than</data>
+      <data key="d7">d5c8f1780dba11ecb1e81171463288e9_d5c8f1780dba11ecb1e81171463288e9_txt</data>
+      <data key="d8">d5c8f1780dba11ecb1e81171463288e9_txt</data>
+    </edge>
+  </graph>
+</graphml>

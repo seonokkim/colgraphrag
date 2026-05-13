@@ -1,0 +1,40 @@
+{
+  "response": "[\"Acanthurus leucostrenon\", \"Chaetodon ulietensis\"]##Acanthurus leucostrenon <|> has_snout_length <|> Chaetodon ulietensis<|COMPLETE|>",
+  "question": {
+    "Guid": "d5bdc5e60dba11ecb1e81171463288e9",
+    "Q": "Is the acanthurus leucostrenon ' s snout as long as the chaetodon ulietensis ' s snout ?",
+    "A": [
+      "No, the snout on the Acanthurus leucostrenon is not as long as the one on the Chaetodon ulietensis."
+    ],
+    "Keywords_A": "No",
+    "Qcate": "YesNo",
+    "split": "val",
+    "img_posFacts": [
+      {
+        "image_id": "30071357",
+        "title": "WebQA image 30071357",
+        "caption": "",
+        "url": "data/webqa/WebQA_imgs_7z_chunks/imgs/all_png/shard_00014/00071357_30071357.png"
+      }
+    ],
+    "txt_posFacts": [
+      {
+        "snippet_id": "d5bdc5e60dba11ecb1e81171463288e9_txt",
+        "fact": "No"
+      }
+    ],
+    "metadata": {
+      "image_doc_ids": [
+        "30071357"
+      ],
+      "text_doc_ids": [
+        "d5bdc5e60dba11ecb1e81171463288e9_txt"
+      ]
+    }
+  },
+  "llm": {
+    "tier": "hf_gemma_4_e4b_it",
+    "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+    "base_url": "(in-process)"
+  }
+}

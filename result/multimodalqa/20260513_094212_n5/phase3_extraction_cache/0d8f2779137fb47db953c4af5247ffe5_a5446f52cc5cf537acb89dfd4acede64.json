@@ -1,0 +1,20 @@
+{
+  "response": "\"entity\"<|>\"Il tifoso, l'arbitro e il calciatore\"<|>\"Movie\"<|>\"1983 Italian comedy film written and directed by Pier Francesco Pingitore\"##\"entity\"<|>\"Ricomincio da tre\"<|>\"Movie\"<|>\"1981 Italian comedy film directed, co-written, and starring Massimo Troisi in his film debut\"##\"entity\"<|>\"Pier Francesco Pingitore\"<|>\"Person\"<|>\"Writer and director of Il tifoso, l'arbitro e il calciatore\"##\"entity\"<|>\"Massimo Troisi\"<|>\"Person\"<|>\"Actor in Ricomincio da tre\"##\"relationship\"<|>\"Pier Francesco Pingitore\"<|>\"Il tifoso, l'arbitro e il calciatore\"<|>\"directed\"##\"relationship\"<|>\"Massimo Troisi\"<|>\"Ricomincio da tre\"<|>\"starred in\"",
+  "llm": {
+    "tier": "hf_gemma_4_e4b_it",
+    "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+    "base_url": "(in-process)"
+  },
+  "qid": "0d8f2779137fb47db953c4af5247ffe5_a5446f52cc5cf537acb89dfd4acede64",
+  "text_content": "Il tifoso, l'arbitro e il calciatore (\"The Supporter, the Referee and the Footballer\") is a 1983 Italian comedy film written and directed by Pier Francesco Pingitore.\nRicomincio da tre, internationally released as I'm Starting from Three, is a 1981 Italian comedy film directed, co-written, and starring Massimo Troisi in his film debut. The film was awarded with two David di Donatello awards for Best Film and Best Actor.",
+  "graph_pattern": {
+    "type_list": [
+      "\"Person\"",
+      "\"Movie\""
+    ],
+    "edge_list": [
+      "Person <|> starred_in <|> Movie"
+    ],
+    "question_text": "What sports is the Ben Piazza 1976 movie title?"
+  }
+}

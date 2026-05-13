@@ -1,0 +1,73 @@
+{
+  "response": "[\"Title\", \"Person\"]##Title <|> in_filmography_of <|> Person<|COMPLETE|>##Title <|> has_poster_feature <|> Woman<|COMPLETE|>",
+  "question": {
+    "qid": "18ecd2ac6c0ac69993b92dc4b30137e8",
+    "question": "Which Title(s), in Filmography of Ben Piazza, has the left half of a woman's face on its poster?",
+    "answers": [
+      {
+        "answer": "Tell Me That You Love Me, Junie Moon",
+        "type": "string",
+        "modality": "image",
+        "text_instances": [],
+        "table_indices": [],
+        "image_instances": [
+          {
+            "doc_id": "ddf8b52a8400deaf05940c5cad8169cd",
+            "doc_part": "image"
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "wiki_entities_in_question": [],
+      "wiki_entities_in_answers": [
+        "Tell Me That You Love Me, Junie Moon"
+      ],
+      "type": "ImageListQ",
+      "modalities": [
+        "image"
+      ],
+      "image_doc_ids": [
+        "c29dbf5e372abe403f66c4845bf924b5",
+        "4e9411dae3cbab2b5223b9dabf825684",
+        "ddf8b52a8400deaf05940c5cad8169cd",
+        "c67ed9c5f5ba2a12fa95610d523fe28d",
+        "4b6d3e469ff8395a0f8c1a13c0422937",
+        "cadbc8e1fb23d7fe15b88ea1141d2dd2",
+        "1c0d30d5776bb8ee954667c5277f4bf7",
+        "ea2173ed76c57ccbe743e87c195f4a37",
+        "8b5a40ca458a36fb64a1785297b66fd8",
+        "9061cf6560fc6305fbd1575097c11aa4",
+        "7869011075ff671da6fd10497b262609",
+        "86cac3116bf69a5e5b2c20866d03e53c",
+        "103e78f3b29095aef414c5b18532da2c",
+        "ca2bf68495e00f43c248562bec134dbe"
+      ],
+      "text_doc_ids": [
+        "7d567450c9e91b13727db7f9581a05ae",
+        "dd1d66075aa05ebb21b4a712ed1d114f",
+        "a8aa15d76d8bdc7bacade1250ed61b8f",
+        "127a4fc8d34e794fe10615c2f30818df",
+        "71441d55b94a7d66c090307229bfd4b1",
+        "c58f8e1bdfa55486737393486d72c7d7",
+        "9ea90db1622fc87acef46c26f654c546",
+        "dfce56a1368e280ff1539c36669c2033",
+        "d7a347507108c8bf4e78a9bda02fcb93",
+        "d3e8e8060111cdb725a5e0b39d4db391"
+      ],
+      "intermediate_answers": [],
+      "table_id": "8513db80c11ea439ab11eba406ec00d9"
+    },
+    "supporting_context": [
+      {
+        "doc_id": "ddf8b52a8400deaf05940c5cad8169cd",
+        "doc_part": "image"
+      }
+    ]
+  },
+  "llm": {
+    "tier": "hf_gemma_4_e4b_it",
+    "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+    "base_url": "(in-process)"
+  }
+}

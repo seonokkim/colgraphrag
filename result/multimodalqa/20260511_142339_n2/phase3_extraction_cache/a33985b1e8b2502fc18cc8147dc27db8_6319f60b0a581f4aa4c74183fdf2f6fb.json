@@ -1,0 +1,20 @@
+{
+  "response": "\"entity\"<|>\"Thomas Peter Shadyac\"<|>\"Person\"<|>\"American director, screenwriter, producer, and author\"##\"entity\"<|>\"Bob Hope\"<|>\"Person\"<|>\"Comedian\"##\"entity\"<|>\"The Nutty Professor\"<|>\"Film\"<|>\"Comedy film\"##\"entity\"<|>\"Liar Liar\"<|>\"Film\"<|>\"Comedy film\"##\"entity\"<|>\"Patch Adams\"<|>\"Film\"<|>\"Comedy film\"##\"entity\"<|>\"Bruce Almighty\"<|>\"Film\"<|>\"Comedy film\"##\"entity\"<|>\"I Am\"<|>\"Film\"<|>\"Documentary film\"##\"entity\"<|>\"José Terrón Peñaranda\"<|>\"Person\"<|>\"Spanish film actor\"##\"entity\"<|>\"For a Few Dollars More\"<|>\"Film\"<|>\"Film\"##\"entity\"<|>\"The Good, the Bad and the Ugly\"<|>\"Film\"<|>\"Film\"##\"relationship\"<|>\"José Terrón Peñaranda\"<|>\"For a Few Dollars More\"<|>\"played role in\"##\"relationship\"<|>\"José Terrón Peñaranda\"<|>\"The Good, the Bad and the Ugly\"<|>\"played role in\"",
+  "llm": {
+    "tier": "hf_gemma_4_e4b_it",
+    "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+    "base_url": "(in-process)"
+  },
+  "qid": "a33985b1e8b2502fc18cc8147dc27db8_6319f60b0a581f4aa4c74183fdf2f6fb",
+  "text_content": "Thomas Peter Shadyac (born December 11, 1958) is an American director, screenwriter, producer, and author. Shadyac, was the youngest joke-writer ever for comedian Bob Hope, is widely known for writing and directing the comedies \"\", \"The Nutty Professor\", \"Liar Liar\", \"Patch Adams\", and \"Bruce Almighty\". In 2010, Shadyac departed from comedic work to write, direct, and narrate his documentary film \"I Am\", in which he explores his abandonment of a materialistic lifestyle following a bicycle accident three years earlier.\nJosé Terrón Peñaranda (5 July 1939 – 12 May 2019) was a Spanish film actor. He played Guy Callaway in \"For a Few Dollars More\" (1965), and Thomas 'Shorty' Larson in \"The Good, the Bad and the Ugly\" (1966).",
+  "graph_pattern": {
+    "type_list": [
+      "\"Person\"",
+      "\"Film\""
+    ],
+    "edge_list": [
+      "Person <|> played_role_in <|> Film"
+    ],
+    "question_text": "For which film did Ben Piazza play the role of Mr. Simms?"
+  }
+}

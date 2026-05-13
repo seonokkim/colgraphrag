@@ -1,0 +1,15 @@
+{
+  "response": "\"entity\"<|>\"2000 Sydney Paralympic Games\"<|>\"Event\"<|>\"The Paralympic Games held in 2000 in Sydney\"##\"entity\"<|>\"wheelchairs\"<|>\"Equipment\"<|>\"The wheelchairs used in the games\"##\"entity\"<|>\"rear wheels\"<|>\"Part of Equipment\"<|>\"The rear wheels of the wheelchairs\"##\"entity\"<|>\"Angled\"<|>\"State/Property\"<|>\"The state of the rear wheels\"##\"relationship\"<|>\"rear wheels\"<|>\"wheelchairs\"<|>\"are part of\"##\"relationship\"<|>\"wheelchairs\"<|>\"2000 Sydney Paralympic Games\"<|>\"were used in\"##\"relationship\"<|>\"rear wheels\"<|>\"Angled\"<|>\"have state\"",
+  "llm": {
+    "tier": "hf_gemma_4_e4b_it",
+    "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+    "base_url": "(in-process)"
+  },
+  "qid": "d5c827980dba11ecb1e81171463288e9_d5c827980dba11ecb1e81171463288e9_txt",
+  "text_content": "Question: Are the rear wheels on the wheelchairs at the 2000 Sydney Paralympic Games straight or angled ? Answer: The rear wheels on the wheelchairs at the 2000 Sydney Paralympic Games are angled. Keywords: Angled.",
+  "graph_pattern": {
+    "type_list": [],
+    "edge_list": [],
+    "question_text": ""
+  }
+}

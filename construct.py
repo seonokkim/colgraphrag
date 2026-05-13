@@ -1,10 +1,21 @@
 """
-Phase 4 — assemble per-question knowledge graphs.
+Phase 4 — 질문별 지식 그래프 조립(Construct).
 
-For each slice question, ``main`` loads Phase 3 cache files named ``{qid}_{text_doc_id}.json``,
-parses ``entity`` / ``relationship`` lines (``##``-delimited) from each ``response`` text, merges
-slice tables and optional image captions, builds a NetworkX graph, writes ``{qid}_graph.graphml``,
-and emits a sibling ``{qid}_graph.models.json`` so GraphML/XML limits do not hide LLM lineage.
+파이프라인 위치:
+  Phase 1(데이터): export_*_slice 가 만든 ``*_questions.jsonl`` 등 슬라이스
+  Phase 2: ``phase2_pattern_cache`` (이 단계에서는 직접 읽지 않음)
+  Phase 3: ``phase3_extraction_cache/{qid}_{text_doc_id}.json`` 의 ``response`` 텍스트
+  Phase 4(본 모듈): 위 캐시 + 슬라이스의 테이블/이미지/텍스트 메타를 묶어 ``nx.Graph`` 생성
+  Phase 5: ``inference.py`` 가 여기서 쓴 ``*_graph.graphml`` 을 로드
+
+동작 요약:
+  - 질문마다 메타의 ``text_doc_ids`` 에 대응하는 Phase 3 JSON 을 읽고,
+    ``response`` 안의 레코드를 ``##`` / ``<|>`` 규칙으로 파싱해 엔티티·관계를 그래프에 반영.
+  - 슬라이스 테이블·이미지(캡션/외부 설명 txt)는 TABLE / IMAGE 보조 노드로 연결.
+  - 산출물: ``{qid}_graph.graphml`` + GraphML 에 넣기 어려운 LLM 계보는 ``{qid}_graph.models.json``.
+
+(영문 레퍼런스) Each slice question loads Phase 3 ``{qid}_{text_doc_id}.json``, parses entity/relationship
+records, merges tables/images, writes GraphML + JSON sidecar.
 """
 
 import io
@@ -22,24 +33,33 @@ import urllib.parse
 
 from util.result_layout import resolve_pipeline_run_id
 
-# Extraction payloads use ``##`` record boundaries and ``<|>`` field separators (parity with extraction.py).
+# Phase 3 extraction.py 출력과 동일: 레코드 경계 ``##``, 필드 구분 ``<|>``.
 record_delimiter = "##"
 tuple_delimiter = "<|>"
 join_descriptions_flag = True
+
+
 def clean_str(input: Any) -> str:
+    """노드/엣지 속성용 간단 정규화(HTML 이스케이프 제거, 제어 문자 제거)."""
     if not isinstance(input, str):
         return input
 
     result = html.unescape(input.strip())
     return re.sub(r"[\x00-\x1f\x7f-\x9f]", "", result)
 def _unpack_descriptions(data: Mapping) -> list[str]:
+    """엣지/노드에 여러 줄로 누적된 description 을 합칠 때 사용."""
     value = data.get("description", None)
     return [] if value is None else value.split("\n")
+
+
 def _unpack_source_ids(data: Mapping) -> list[str]:
+    """출처 snippet id 목록(쉼표 구분 문자열) 파싱."""
     value = data.get("source_id", None)
     return [] if value is None else value.split(", ")
+
+
 def _canonical_doc_fragment(owner_qid: str, raw_key: Any) -> str:
-    """Strip `{owner_qid}_` prefix so graph `doc_id` matches MMQA gold doc ids."""
+    """MMQA 등에서 캐시 키에 붙는 ``{qid}_`` 접두를 제거해 gold doc_id 와 맞춤."""
     if isinstance(raw_key, str):
         base = clean_str(raw_key)
     else:
@@ -48,6 +68,7 @@ def _canonical_doc_fragment(owner_qid: str, raw_key: Any) -> str:
         return base[len(owner_qid) + 1 :].strip()
     return base.strip()
 def _merge_doc_id_attr(existing: Any, new_fragment: str) -> str:
+    """동일 노드/엣지에 여러 문서 출처가 붙을 때 doc_id 문자열을 합집합 정렬로 병합."""
     parts: set[str] = set()
     if isinstance(existing, str) and existing.strip():
         for p in existing.split(", "):
@@ -58,15 +79,18 @@ def _merge_doc_id_attr(existing: Any, new_fragment: str) -> str:
         parts.add(new_fragment.strip())
     return ", ".join(sorted(parts))
 def load_jsonl_data(path):
+    """슬라이스 JSONL(한 줄당 하나의 JSON 객체) 전체 로드."""
     with open(path, "r", encoding='UTF-8') as file:
         return [json.loads(line) for line in file]
 def extract_entity_by_wikiurl(url):
+    """이미지 제목 URL 경로 끝토막에서 사람 읽기형 엔티티 레이블 추출(언더스코어→공백)."""
     path = urllib.parse.urlparse(url).path
     entity = path.split('/')[-1]
     entity = urllib.parse.unquote(entity)
     entity = entity.replace('_', ' ')
     return entity
 def table_to_markdown(table):
+    """슬라이스 테이블 구조체 → 그래프 노드 description 에 넣을 마크다운 문자열."""
     markdown = ""
     table = table['table']
     header = table['header']
@@ -78,12 +102,12 @@ def table_to_markdown(table):
 
 
 def construct_graph(text_answers, table, question, texts, images, owner_qid: str = ""):
-    """Turn Phase-3 cache dicts plus slice media cues into one undirected ``nx.Graph``.
+    """Phase 3 캐시 행들 + 슬라이스 미디어 힌트 → 무방향 ``nx.Graph`` 한 개.
 
-    ``text_answers`` rows carry the ``response`` string that ``extraction.py`` emitted; records are split on
-    ``record_delimiter`` / ``tuple_delimiter`` into ``entity`` and ``relationship`` tuples. Duplicate entities
-    merge descriptions and provenance; optional ``table`` / ``images`` add TABLE/IMAGE scaffolding nodes wired
-    to titles. Internal node keys look like ``NAME_UPPER + " Bt: " + TYPE`` so heterogeneous sources stay unique.
+    - ``text_answers``: 각 원소의 ``response`` 를 ``##`` / ``<|>`` 로 쪼개 엔티티·관계 튜플 복원.
+    - 동일 엔티티는 description·source_id·doc_id 를 합침.
+    - ``table`` / ``images`` 가 있으면 TABLE·IMAGE 스캐폴딩 노드와 제목 앵커 노드를 추가.
+    - 내부 노드 키: ``이름대문자 + " Bt: " + 타입`` 형태로 소스가 섞여도 충돌 완화.
     """
     graph = nx.Graph()
 
@@ -97,14 +121,14 @@ def construct_graph(text_answers, table, question, texts, images, owner_qid: str
             record = re.sub(r"^\(|\)$", "", record.strip())
             record_attributes = record.split(tuple_delimiter)
 
-            # Accept "entity" or any type name as first field (LLM may output type instead of "entity")
+            # 첫 필드가 "entity" 가 아니어도 4필드 이상이면 엔티티로 간주(LLM 변형 출력 흡수).
             first_field = record_attributes[0].strip('"').lower()
             is_entity_record = (
                 first_field == "entity" or
                 (first_field not in ("relationship", "relation") and len(record_attributes) >= 4)
             )
             if is_entity_record and len(record_attributes) >= 4:
-                # add this record as a node in the G
+                # 엔티티 레코드 → 그래프 노드 추가 또는 기존 노드에 속성 병합
                 entity_name = clean_str(record_attributes[1]).strip('"')
                 entity_type = clean_str(record_attributes[2]).strip('"')
                 entity_description = clean_str(record_attributes[3]).strip('"')
@@ -256,7 +280,7 @@ def construct_graph(text_answers, table, question, texts, images, owner_qid: str
                 source_id=table['id'],
                 doc_id=str(table['id']),
             )
-    # Add image nodes
+    # 이미지: 캡션/설명이 있을 때만 IMAGE 노드·앵커 엣지 추가
     for image in images:
         img_id = image.get("id", image.get("image_id", ""))
         image_description = (
@@ -325,7 +349,7 @@ def construct_graph(text_answers, table, question, texts, images, owner_qid: str
 
 
 def graph_to_graphml_str(graph):
-    """Return UTF-8 GraphML bytes decoded to str --- helper for dumps/tests; CLI uses ``nx.write_graphml``."""
+    """테스트/덤프용: GraphML 바이트를 UTF-8 문자열로 반환. CLI 는 ``nx.write_graphml`` 직사용."""
     with io.BytesIO() as byte_output:
         nx.write_graphml(graph, byte_output)
         byte_output.seek(0)
@@ -333,18 +357,16 @@ def graph_to_graphml_str(graph):
     return graphml_str
 
 
-# Example artifacts (notebook env often writes under ``phase4_graphs_out/``; CLI default targets ``phase4_graphs_real/`` unless overridden):
-#   ``<CONSTRUCT_OUTPUT_GRAPH_DIR>/<Guid>_graph.graphml``
-#   ``<CONSTRUCT_OUTPUT_GRAPH_DIR>/<Guid>_graph.models.json``  # summarizes upstream extraction ``llm`` entries
+# 산출 예: ``<CONSTRUCT_OUTPUT_GRAPH_DIR>/<qid>_graph.graphml`` + ``*_graph.models.json`` (Phase 3 llm 메타 요약)
 
 
 def main():
-    """Hydrate slices + caches, synthesize graphs for each capped question batch, persist GraphML sidecars."""
+    """슬라이스·캐시 경로를 환경변수로 해석한 뒤, 상한 개수 질문에 대해 GraphML·models sidecar 기록."""
 
     base_dir = Path(__file__).resolve().parent
     _dataset = os.getenv("MMGRAPHRAG_DATASET", "webqa").strip().lower()
     run_id = resolve_pipeline_run_id(base_dir, _dataset)
-    # CONSTRUCT_SLICE_DIR is the preferred env var; CONSTRUCT_WEBQA_SLICE_DIR kept for backwards compat
+    # 슬라이스 루트: CONSTRUCT_SLICE_DIR 권장, CONSTRUCT_WEBQA_SLICE_DIR 는 하위 호환
     slice_dir = Path(os.getenv(
         "CONSTRUCT_SLICE_DIR",
         os.getenv("CONSTRUCT_WEBQA_SLICE_DIR", str(base_dir / "result" / run_id / f"{_dataset}_slice")),
@@ -369,8 +391,7 @@ def main():
         "CONSTRUCT_EXTRACTION_CACHE",
         str(base_dir / "result" / run_id / "phase3_extraction_cache"),
     )
-    # Default directory name differs from notebooks that export to ``phase4_graphs_out/`` ---
-    # always set ``CONSTRUCT_OUTPUT_GRAPH_DIR`` when swapping layouts between ``*_real`` / ``*_out`` trees.
+    # 노트북은 종종 ``phase4_graphs_out``; CLI 기본은 ``phase4_graphs_real`` — 경로 맞출 때 env 로 덮어쓰기
     output_graph_dir = os.getenv(
         "CONSTRUCT_OUTPUT_GRAPH_DIR",
         str(base_dir / "result" / run_id / "phase4_graphs_real"),
@@ -383,11 +404,11 @@ def main():
     tables = load_jsonl_data(table_file)
     tables = {table.get('id', table.get('table_id', '')): table for table in tables}
     images = load_jsonl_data(image_file)
-    # Support both 'id' and 'image_id' field names
+    # 이미지 행: id / image_id 필드명 모두 허용
     images = {img.get('id', img.get('image_id', '')): img for img in images}
     texts = load_jsonl_data(text_file)
     texts = {text.get('id', text.get('snippet_id', '')): text for text in texts}
-    # One GraphML (+ JSON lineage sidecar) per question row encountered before ``CONSTRUCT_MAX_QUESTIONS`` truncation.
+    # 질문당 GraphML 1개 + upstream LLM 계보 JSON (상한 CONSTRUCT_MAX_QUESTIONS 적용 후 남는 행만)
     for question in questiones:
         qid = question.get("qid") or question.get("Guid") or ""
         md = question.get("metadata") or {}
@@ -402,9 +423,7 @@ def main():
                 with open(cache_path, "r", encoding="utf-8") as file:
                     cache_entry = json.load(file)
                 text_results.append(cache_entry)
-                # Pull the LLM attribution recorded by phase3 extraction.py.
-                # Older caches without the field are tolerated so existing
-                # runs keep working after the upgrade.
+                # Phase 3 extraction.py 가 넣은 llm 메타(티어/모델/URL). 구버전 캐시는 필드 없음 → legacy 처리
                 llm_entry = cache_entry.get("llm")
                 if isinstance(llm_entry, dict):
                     upstream_llm_tiers.append(
@@ -431,9 +450,7 @@ def main():
         out_path = os.path.join(output_graph_dir, f"{qid}_graph.graphml")
         nx.write_graphml(q_graph, out_path)
 
-        # Sidecar that records which extraction-cache LLM(s) fed this graph.
-        # graphml itself is a rigid XML schema, so we write a JSON companion
-        # rather than trying to stuff provenance into graph attributes.
+        # GraphML 스키마에 계보를 억지로 넣지 않고, 동일 stem 의 .models.json 에 집계
         model_counts: Dict[str, int] = {}
         tier_counts: Dict[str, int] = {}
         for entry in upstream_llm_tiers:

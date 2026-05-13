@@ -1,6 +1,6 @@
-# ColGraphRAG WebQA Demo Backend
+# ColGraphRAG Demo Backend
 
-FastAPI server that serves **pipeline outputs** under **`result/<run_id>/`** (questions, graphs, predictions, scores) plus an optional **`/api/chat`** path that runs **local Gemma** over graph context — no external hosted search APIs.
+FastAPI server that serves **pipeline outputs** under **`result/<run_id>/`** for **WebQA** and (when configured) **MultimodalQA** — questions, graphs, predictions, scores — plus **`/api/chat`** (local HF Gemma or Ollama backends over graph context). No external hosted search APIs.
 
 ## Quick Start
 
@@ -36,18 +36,22 @@ See **`services/logging_setup.py`**.
 
 ## API Endpoints
 
+**Dataset routing:** for run/questions/graphs/images/scores, pass **`?dataset=webqa`** (default) or **`?dataset=mmqa`**. MMQA returns **503** if no MultimodalQA run was loaded at startup (see `config/paths.yaml`).
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/health` | GET | Server status + `run_id` |
-| `/api/run/info` | GET | Run metadata (run_id, counts, paths) |
-| `/api/run/scores` | GET | QA-FL / QA-Acc / QA + Qcate breakdown |
-| `/api/questions` | GET | Question list with predictions |
-| `/api/questions/{qid}` | GET | Question detail (gold, prediction, retrieval) |
-| `/api/graphs/{qid}` | GET | Graph nodes/edges for visualization |
-| `/api/graphs/{qid}/graphml` | GET | Download raw GraphML |
-| `/api/images/{image_id}` | GET | Serve PNG image |
-| `/api/images` | GET | List available image IDs |
-| `/api/chat` | POST | Live-style answer (JSON body `{ "question": "..." }`); uses local Gemma + graph context |
+| `/` | GET | Short JSON index of main paths (includes `dataset=` hints) |
+| `/health` | GET | Server status + WebQA `run_id` (from `set_run_id` on the default WebQA run) |
+| `/api/datasets` | GET | Which datasets are available (`webqa` / `mmqa`) and their `run_id`s |
+| `/api/run/info` | GET | Run metadata — query `dataset` as above |
+| `/api/run/scores` | GET | QA-FL / QA-Acc / QA + Qcate breakdown — query `dataset` as above |
+| `/api/questions` | GET | Question list with predictions — query `dataset` |
+| `/api/questions/{qid}` | GET | Question detail (gold, prediction, retrieval) — query `dataset` |
+| `/api/graphs/{qid}` | GET | Graph nodes/edges for visualization — query `dataset` |
+| `/api/graphs/{qid}/graphml` | GET | Download raw GraphML — query `dataset` |
+| `/api/images/{image_id}` | GET | Serve image by ID — query `dataset` |
+| `/api/images` | GET | List image IDs (optional `limit`, default 100) — query `dataset` |
+| `/api/chat` | POST | JSON body: `question` (required), `dataset` (`webqa` \| `mmqa`, default `webqa`), `model` (`hf_gemma4_e4b` \| `ollama_gemma4_e2b` \| `ollama_gemma4_e4b`, default `hf_gemma4_e4b`). Matches a loaded question, then Gemma + graph context. |
 
 ## Configuration
 

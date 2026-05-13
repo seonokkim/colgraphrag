@@ -1,0 +1,94 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d10" for="edge" attr.name="weight" attr.type="long" />
+  <key id="d9" for="edge" attr.name="entity_name" attr.type="string" />
+  <key id="d8" for="edge" attr.name="doc_id" attr.type="string" />
+  <key id="d7" for="edge" attr.name="source_id" attr.type="string" />
+  <key id="d6" for="edge" attr.name="description" attr.type="string" />
+  <key id="d5" for="edge" attr.name="weight" attr.type="double" />
+  <key id="d4" for="node" attr.name="doc_id" attr.type="string" />
+  <key id="d3" for="node" attr.name="source_id" attr.type="string" />
+  <key id="d2" for="node" attr.name="description" attr.type="string" />
+  <key id="d1" for="node" attr.name="type" attr.type="string" />
+  <key id="d0" for="node" attr.name="entity_name" attr.type="string" />
+  <graph edgedefault="undirected">
+    <node id="IL TIFOSO, L'ARBITRO E IL CALCIATORE Bt: MOVIE">
+      <data key="d0">Il tifoso, l'arbitro e il calciatore</data>
+      <data key="d1">Movie</data>
+      <data key="d2">1983 Italian comedy film written and directed by Pier Francesco Pingitore</data>
+      <data key="d3">0d8f2779137fb47db953c4af5247ffe5_a5446f52cc5cf537acb89dfd4acede64, 0d8f2779137fb47db953c4af5247ffe5_226fba350424f16022844be7f2ec7322</data>
+      <data key="d4">226fba350424f16022844be7f2ec7322, a5446f52cc5cf537acb89dfd4acede64</data>
+    </node>
+    <node id="RICOMINCIO DA TRE Bt: MOVIE">
+      <data key="d0">Ricomincio da tre</data>
+      <data key="d1">Movie</data>
+      <data key="d2">1981 Italian comedy film directed, co-written, and starring Massimo Troisi in his film debut</data>
+      <data key="d3">0d8f2779137fb47db953c4af5247ffe5_a5446f52cc5cf537acb89dfd4acede64, 0d8f2779137fb47db953c4af5247ffe5_226fba350424f16022844be7f2ec7322</data>
+      <data key="d4">226fba350424f16022844be7f2ec7322, a5446f52cc5cf537acb89dfd4acede64</data>
+    </node>
+    <node id="PIER FRANCESCO PINGITORE Bt: PERSON">
+      <data key="d0">Pier Francesco Pingitore</data>
+      <data key="d1">Person</data>
+      <data key="d2">Writer and director of Il tifoso, l'arbitro e il calciatore</data>
+      <data key="d3">0d8f2779137fb47db953c4af5247ffe5_a5446f52cc5cf537acb89dfd4acede64, 0d8f2779137fb47db953c4af5247ffe5_226fba350424f16022844be7f2ec7322</data>
+      <data key="d4">226fba350424f16022844be7f2ec7322, a5446f52cc5cf537acb89dfd4acede64</data>
+    </node>
+    <node id="MASSIMO TROISI Bt: PERSON">
+      <data key="d0">Massimo Troisi</data>
+      <data key="d1">Person</data>
+      <data key="d2">Actor in Ricomincio da tre</data>
+      <data key="d3">0d8f2779137fb47db953c4af5247ffe5_a5446f52cc5cf537acb89dfd4acede64, 0d8f2779137fb47db953c4af5247ffe5_226fba350424f16022844be7f2ec7322</data>
+      <data key="d4">226fba350424f16022844be7f2ec7322, a5446f52cc5cf537acb89dfd4acede64</data>
+    </node>
+    <node id="BEN PIAZZA Bt: ">
+      <data key="d0">Ben Piazza</data>
+      <data key="d1" />
+      <data key="d2" />
+      <data key="d3">8513db80c11ea439ab11eba406ec00d9</data>
+      <data key="d4">8513db80c11ea439ab11eba406ec00d9</data>
+    </node>
+    <node id="BEN PIAZZA FILMOGRAPHY Bt: TABLE">
+      <data key="d0">Ben Piazza Filmography</data>
+      <data key="d1">TABLE</data>
+      <data key="d2">| Year | Title | Role | Notes |
+|---|---|---|---|
+| 1957 | A Dangerous Age | David |  |
+| 1959 | The Hanging Tree | Rune |  |
+| 1962 | No Exit | Camarero |  |
+| 1970 | Tell Me That You Love Me, Junie Moon | Jesse |  |
+| 1972 | The Outside Man | Desk Clerk |  |
+| 1973 | The Candy Snatchers | Avery |  |
+| 1976 | The Bad News Bears | Bob Whitewood |  |
+| 1977 | I Never Promised You a Rose Garden | Jay Blake |  |
+| 1979 | Nightwing | Roger Piggott |  |
+| 1979 | The Concorde ... Airport '79 | Associate | TV version, Uncredited |
+| 1980 | The Blues Brothers | Father |  |
+| 1982 | Waltz Across Texas | Bill Wrather |  |
+| 1985 | Mask | Mr. Simms |  |
+| 1988 | Clean and Sober | Kramer |  |
+| 1990 | Rocky V | Doctor | Uncredited |
+| 1991 | Guilty by Suspicion | Darryl Zanuck |  |</data>
+      <data key="d3">8513db80c11ea439ab11eba406ec00d9</data>
+      <data key="d4">8513db80c11ea439ab11eba406ec00d9</data>
+    </node>
+    <edge source="IL TIFOSO, L'ARBITRO E IL CALCIATORE Bt: MOVIE" target="PIER FRANCESCO PINGITORE Bt: PERSON">
+      <data key="d5">2.0</data>
+      <data key="d6">directed</data>
+      <data key="d7">0d8f2779137fb47db953c4af5247ffe5_a5446f52cc5cf537acb89dfd4acede64, 0d8f2779137fb47db953c4af5247ffe5_226fba350424f16022844be7f2ec7322</data>
+      <data key="d8">226fba350424f16022844be7f2ec7322, a5446f52cc5cf537acb89dfd4acede64</data>
+    </edge>
+    <edge source="RICOMINCIO DA TRE Bt: MOVIE" target="MASSIMO TROISI Bt: PERSON">
+      <data key="d5">2.0</data>
+      <data key="d6">starred in</data>
+      <data key="d7">0d8f2779137fb47db953c4af5247ffe5_a5446f52cc5cf537acb89dfd4acede64, 0d8f2779137fb47db953c4af5247ffe5_226fba350424f16022844be7f2ec7322</data>
+      <data key="d8">226fba350424f16022844be7f2ec7322, a5446f52cc5cf537acb89dfd4acede64</data>
+    </edge>
+    <edge source="BEN PIAZZA Bt: " target="BEN PIAZZA FILMOGRAPHY Bt: TABLE">
+      <data key="d9">Ben Piazza Filmography</data>
+      <data key="d10">1</data>
+      <data key="d6">Ben Piazza Filmography table</data>
+      <data key="d7">8513db80c11ea439ab11eba406ec00d9</data>
+      <data key="d8">8513db80c11ea439ab11eba406ec00d9</data>
+    </edge>
+  </graph>
+</graphml>

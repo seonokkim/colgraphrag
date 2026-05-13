@@ -1,0 +1,77 @@
+{
+  "d5cb27900dba11ecb1e81171463288e9": [
+    {
+      "id": "30073400",
+      "score": 19.596696853637695,
+      "rank": 1,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "d5cb27900dba11ecb1e81171463288e9_txt",
+      "score": 1.0,
+      "rank": 2,
+      "source": "graph_enriched"
+    }
+  ],
+  "d5ca85b00dba11ecb1e81171463288e9": [
+    {
+      "id": "30072916",
+      "score": 23.105792999267578,
+      "rank": 1,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "d5ca85b00dba11ecb1e81171463288e9_txt",
+      "score": 0.0,
+      "rank": 2,
+      "source": "graph_enriched"
+    }
+  ],
+  "d5c827980dba11ecb1e81171463288e9": [
+    {
+      "id": "30071071",
+      "score": 20.540340423583984,
+      "rank": 1,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "d5c827980dba11ecb1e81171463288e9_txt",
+      "score": 2.0,
+      "rank": 2,
+      "source": "graph_enriched"
+    }
+  ],
+  "d5c8f1780dba11ecb1e81171463288e9": [
+    {
+      "id": "30071009",
+      "score": 16.966039657592773,
+      "rank": 1,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "d5c8f1780dba11ecb1e81171463288e9_txt",
+      "score": 1.0,
+      "rank": 2,
+      "source": "graph_enriched"
+    }
+  ],
+  "d5c2d1760dba11ecb1e81171463288e9": [
+    {
+      "id": "30074120",
+      "score": 10.097039222717285,
+      "rank": 1,
+      "source": "colembed_maxsim",
+      "model_ref": "/workspace/late-interaction-mm-graph-rag/models/retriever/llama-nemotron-colembed-vl-3b-v2"
+    },
+    {
+      "id": "d5c2d1760dba11ecb1e81171463288e9_txt",
+      "score": 1.0,
+      "rank": 2,
+      "source": "graph_enriched"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "response": "\"entity\"<|>\"481 8th Ave, New York\"<|>\"Location\"<|>\"Address where the buildings and flagpole are located\"##\"entity\"<|>\"flag pole\"<|>\"Object\"<|>\"The object used for comparison\"##\"entity\"<|>\"buildings\"<|>\"Structure\"<|>\"The structures being compared\"##\"relationship\"<|>\"buildings\"<|>\"flag pole\"<|>\"are not shorter than\"",
+  "llm": {
+    "tier": "hf_gemma_4_e4b_it",
+    "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+    "base_url": "(in-process)"
+  },
+  "qid": "d5c8f1780dba11ecb1e81171463288e9_d5c8f1780dba11ecb1e81171463288e9_txt",
+  "text_content": "Question: Are there any buildings shorter than the flag pole in 481 8th Ave , New York ? Answer: There are not any buildings shorter than the flag pole on 481 8th Ave, New York.",
+  "graph_pattern": {
+    "type_list": [],
+    "edge_list": [],
+    "question_text": ""
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "response": "\"entity\"<|>\"330 Bowery bank-theater-store\"<|>\"Building\"<|>\"A building located at 330 Bowery\"<|>\"entity\"<|>\"Germania 190 Bowery\"<|>\"Building\"<|>\"A building located at 190 Bowery\"<|>\"relationship\"<|>\"330 Bowery bank-theater-store\"<|>\"has more windows than\"<|>\"Germania 190 Bowery\"",
+  "llm": {
+    "tier": "hf_gemma_4_e4b_it",
+    "model": "/workspace/late-interaction-mm-graph-rag/models/mllm/gemma-4-E4B-it",
+    "base_url": "(in-process)"
+  },
+  "qid": "d5ca85b00dba11ecb1e81171463288e9_d5ca85b00dba11ecb1e81171463288e9_txt",
+  "text_content": "Question: Which building has more windows on the facing with its entrance , 330 Bowery bank - theater - store or Germania 190 Bowery ? Answer: The 330 Bowery bank-theater-store has more windows on the facing with its entrance. Keywords: 330 Bowery bank-theater-store",
+  "graph_pattern": {
+    "type_list": [],
+    "edge_list": [],
+    "question_text": ""
+  }
+}
