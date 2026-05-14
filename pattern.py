@@ -1,16 +1,16 @@
 """
-Phase 2 — 질문별 그래프 패턴(스키마 힌트) 합성.
+Phase 2 — synthesize per-question graph patterns (schema hints).
 
-역할:
-  - 슬라이스의 각 질문을 ``GRAPH_PATTERN_PROMPT`` 에 넣어 로컬 Gemma 로 완성문을 받고,
-    엔티티 타입 리스트 + ``##`` 로 구분된 관계 템플릿 문자열을 생성.
-  - 결과는 ``phase2_pattern_cache/<qid>.json`` 에 저장 → Phase 3 가 다시 LLM 부르지 않고 재사용.
+Role:
+  - Feed each slice question through ``GRAPH_PATTERN_PROMPT`` to local Gemma for completion:
+    entity-type list plus ``##``-separated relation template strings.
+  - Persist under ``phase2_pattern_cache/<qid>.json`` so Phase 3 reuses without another LLM call.
 
-입력:
-  - WebQA: 프로파일별 JSON 경로(``util.webqa_load``).
-  - MMQA 등: ``mmqa_questions.jsonl`` 한 줄당 질문 dict.
+Inputs:
+  - WebQA: profile-specific JSON path (``util.webqa_load``).
+  - MMQA and others: one question dict per line in ``mmqa_questions.jsonl``.
 
-출력 캐시 JSON 필드: ``response`` (패턴 문자열), ``question`` (원본), ``llm`` (메타) 등.
+Cached JSON fields include ``response`` (pattern string), ``question`` (original row), ``llm`` (metadata), etc.
 """
 
 import asyncio
@@ -38,14 +38,14 @@ from util.webqa_load import (
 
 ensure_default_gemma4_e4b_it_path()
 
-# --- 런타임 설정: 환경변수로 동시 요청 수·입력 JSON·캐시 경로·상한·드라이런 전환 ---
-# CONCURRENCY: 한 웨이브당 비동기 작업 수(질문 1개 → 캐시 파일 1개)
+# --- Runtime: env overrides for concurrency, input JSON, cache dir, caps, dry-run ---
+# CONCURRENCY: async tasks per wave (one question → one cache file)
 CONCURRENCY = int(os.getenv("PATTERN_CONCURRENCY", "16"))
 _BASE_DIR = Path(__file__).resolve().parent
 _DATASET = os.getenv("MMGRAPHRAG_DATASET", "webqa").strip().lower()
 _RUN_ID = resolve_pipeline_run_id(_BASE_DIR, _DATASET)
 
-# 질문 JSONL: WebQA 는 프로파일 헬퍼 경로, MMQA 는 기본적으로 mmqa_slice 의 questions
+# Questions JSONL: WebQA uses profile helper path; MMQA defaults to mmqa_slice questions
 _default_json = (
     str(_BASE_DIR / "result" / _RUN_ID / "mmqa_slice" / "mmqa_questions.jsonl")
     if _DATASET == "mmqa"
@@ -56,12 +56,12 @@ CACHE_DIR = os.getenv(
     "PATTERN_CACHE_DIR",
     str(_BASE_DIR / "result" / _RUN_ID / "phase2_pattern_cache"),
 )
-# MMQA/비-WebQA 에서만 ``PATTERN_MAX_SAMPLES`` 로 상한. WebQA 는 ``records_for_pattern`` 내부에서 자름.
+# MMQA/non-WebQA only: cap with ``PATTERN_MAX_SAMPLES``. WebQA trims inside ``records_for_pattern``.
 MAX_SAMPLES = int(os.getenv("PATTERN_MAX_SAMPLES", "0"))
 DRY_RUN = os.getenv("PATTERN_DRY_RUN", "0") == "1"
 _HF_GEMMA_MODULE: Optional[object] = None
 
-# --- 아래는 캐시 파일 형태 예시(result/<run>/phase2_pattern_cache/*.json 참고) ---
+# --- Example cache layout (see result/<run>/phase2_pattern_cache/*.json) ---
 #
 # (1) One input dict after ``load_json_data()`` (WebQA; other JSONL uses ``qid`` + ``question`` keys).
 #
@@ -93,7 +93,7 @@ _HF_GEMMA_MODULE: Optional[object] = None
 
 
 def _get_hf_gemma_module():
-    """지연 로드: ``mllm.hf_gemma_4_e4b_it`` 가 구성되어 있을 때만 모듈 객체 반환."""
+    """Lazy import: return ``mllm.hf_gemma_4_e4b_it`` module only when configured."""
     global _HF_GEMMA_MODULE
     if _HF_GEMMA_MODULE is not None:
         return _HF_GEMMA_MODULE
@@ -108,7 +108,7 @@ def _get_hf_gemma_module():
 
 
 def _hf_generate_text(prompt: str) -> Tuple[str, dict]:
-    """동기 1회 디코딩; 반환 텍스트와 캐시에 붙일 ``llm`` 메타."""
+    """Single synchronous decode; returns text plus ``llm`` metadata for the cache."""
     gemma = _get_hf_gemma_module()
     if gemma is None:
         raise RuntimeError("HF Gemma module not available or not configured")
@@ -122,7 +122,7 @@ def _hf_generate_text(prompt: str) -> Tuple[str, dict]:
 
 
 async def load_json_data() -> List[Dict]:
-    """질문 행 로드: WebQA 경로면 프로파일·슬라이싱 유틸, 그 외 일반 JSONL 1줄=1객체."""
+    """Load question rows: WebQA path uses profile/slicing helpers; else plain JSONL one object per line."""
     if is_webqa_json_path(JSON_FILE_PATH):
         return records_for_pattern(JSON_FILE_PATH, resolve_profile())
     with open(JSON_FILE_PATH, "r", encoding="utf-8") as file:
@@ -130,7 +130,7 @@ async def load_json_data() -> List[Dict]:
 
 
 def hash_prompt(prompt: str) -> str:
-    # 과거 MD5 키 캐시용; 현재 파일명은 Guid/qid 기준
+    # Legacy MD5 key helper; filenames now use Guid/qid
     return hashlib.md5(prompt.encode()).hexdigest()
 
 
@@ -148,8 +148,8 @@ def validate_json_file(file_path):
 
 async def make_request(session: aiohttp.ClientSession, prompt: str, data: Dict):
     """
-    질문 1건 → 캐시 JSON 1개. 이미 유효 JSON 이 있으면 스킵(손상 시 삭제 후 재생성).
-    ``session`` 은 배치 오케스트레이션 호환용; 실제 LLM 호출은 프로세스 내 HF Gemma.
+    One question → one cache JSON; skip if valid JSON exists (delete corrupt files to regenerate).
+    ``session`` is for batch orchestration compatibility; LLM runs in-process HF Gemma.
     """
     webqa = is_webqa_json_path(JSON_FILE_PATH)
     key = data["Guid"] if webqa else data["qid"]
@@ -161,7 +161,7 @@ async def make_request(session: aiohttp.ClientSession, prompt: str, data: Dict):
         os.remove(cache_file)
 
     if DRY_RUN:
-        # 드라이런: CUDA/가중치 없이 결정적 스캐폴드로 downstream 파서 검증 가능
+        # Dry-run: deterministic scaffold without CUDA/weights for downstream parser smoke tests
         result = {
             "response": '["ENTITY","ATTRIBUTE"]##ENTITY <|> related_to <|> ATTRIBUTE<|COMPLETE|>',
             "question": data,
@@ -181,7 +181,7 @@ async def make_request(session: aiohttp.ClientSession, prompt: str, data: Dict):
 
 
 async def process_batch(session: aiohttp.ClientSession, template: str, json_data: List[Dict], start_index: int):
-    """start_index 부터 최대 CONCURRENCY 개까지 프롬프트 발행; 각 완성이 개별 JSON 파일로 기록됨."""
+    """Issue prompts from ``start_index`` up to ``CONCURRENCY``; each completion writes its own JSON."""
     tasks = []
     webqa = is_webqa_json_path(JSON_FILE_PATH)
     for i in range(start_index, min(start_index + CONCURRENCY, len(json_data))):
@@ -199,7 +199,7 @@ async def main():
     os.makedirs(CACHE_DIR, exist_ok=True)
     template = GRAPH_PATTERN_PROMPT
     json_data = await load_json_data()
-    # 로드 후 MMQA 등 비-WebQA 만 여기서 [:MAX_SAMPLES]. WebQA 는 records_for_pattern 안에서 이미 잘림.
+    # After load, apply [:MAX_SAMPLES] only for non-WebQA (e.g. MMQA). WebQA is capped in records_for_pattern.
     if not is_webqa_json_path(JSON_FILE_PATH) and MAX_SAMPLES > 0:
         json_data = json_data[:MAX_SAMPLES]
     total_batches = max(1, math.ceil(len(json_data) / CONCURRENCY))
@@ -207,7 +207,7 @@ async def main():
         for i in range(0, len(json_data), CONCURRENCY):
             await process_batch(session, template, json_data, i)
             current_batch = i // CONCURRENCY + 1
-            _ = (current_batch / total_batches) * 100  # 배치 진행률(로깅 훅용으로 유지)
+            _ = (current_batch / total_batches) * 100  # batch progress fraction (logging hook placeholder)
 
 
 if __name__ == "__main__":

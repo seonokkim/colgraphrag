@@ -2,13 +2,12 @@
 """
 Interactive 3D GraphML visualization (Plotly).
 
-Implements `.dev_document/txt/20260320_1312.txt`:
+Modes:
   - layered: z-layers (query / entities / evidence / answer heuristics)
   - constellation: components separated in 3D (fragmented constellation)
-  - spring3d: plain 3D spring layout (doc mockup; good for quick structure view)
+  - spring3d: plain 3D spring layout (quick structural overview)
 
-Edge styling: ``weight`` -> line width; ``description`` length -> opacity (doc:
-thickness / transparency).
+Edge styling: ``weight`` maps to line width; ``description`` length maps to opacity.
 
 Usage (from `query-driven_mm_graph_rag`):
   python util/analyze/visualize_graphml_3d.py result/.../foo_graph.graphml -o viz.html --mode layered

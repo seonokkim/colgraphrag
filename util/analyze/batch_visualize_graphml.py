@@ -5,7 +5,7 @@ Batch-export Phase-4 GraphML folders (e.g. ``phase4_graphs_real_100``) to 2D PNG
 Usage (from ``query-driven_mm_graph_rag``)::
 
   python util/analyze/batch_visualize_graphml.py --graph-dir result/20260319/phase4_graphs_real_100 \\
-    --out-dir .dev_document/figures/batch_100 --formats both
+    --out-dir figures/batch_export --formats both
 
 Each output file is named ``YYYYMMDD_HHMMSS_<stem>.png`` / ``.html`` (local time prefix).
 """

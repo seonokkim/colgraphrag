@@ -1,16 +1,16 @@
 """
-Phase 3 — Phase 2 그래프 패턴을 조건으로 한 관계 추출(Relation extraction).
+Phase 3 — relation extraction conditioned on Phase 2 graph patterns.
 
-파이프라인 흐름:
-  1) ``*_questions.jsonl`` 의 각 질문과 ``metadata.text_doc_ids`` 가 가리키는 ``*_texts.jsonl`` 스니펫을 읽음.
-  2) ``phase2_pattern_cache/<qid>.json`` 의 ``response`` 를 ``process_graph_pattern`` 으로
-     타입 리스트 + 엣지 템플릿 구조로 파싱(없으면 빈 스캐폴드).
-  3) ``EXTRACT_RELATION_PROMPT`` 에 패턴과 본문을 넣어 Gemma 에게 엔티티/관계 레코드 문자열 생성 요청.
-  4) ``phase3_extraction_cache/<qid>_<text_doc_id>.json`` 으로 저장 → Phase 4 ``construct.py`` 가 소비.
+Pipeline:
+  1) Read each ``*_questions.jsonl`` row and ``*_texts.jsonl`` snippets from ``metadata.text_doc_ids``.
+  2) Parse ``phase2_pattern_cache/<qid>.json`` ``response`` with ``process_graph_pattern``
+     into type list + edge templates (empty scaffold if missing).
+  3) Prompt Gemma with ``EXTRACT_RELATION_PROMPT`` using pattern + body to emit entity/relationship records.
+  4) Save ``phase3_extraction_cache/<qid>_<text_doc_id>.json`` for Phase 4 ``construct.py``.
 
-출력 ``response`` 형식: ``##`` 로 레코드 구분, ``entity`` / ``relationship`` 튜플은 ``<|>`` 구분(``prompt.py`` 참고).
+Output ``response`` format: records separated by ``##``; ``entity`` / ``relationship`` tuples use ``<|>`` (see ``prompt.py``).
 
-Dry-run(``EXTRACTION_DRY_RUN=1``)은 CUDA 없이 템플릿 문자열만 써서 캐시 형태를 맞춤.
+Dry-run (``EXTRACTION_DRY_RUN=1``) fills caches with template strings only—no CUDA.
 """
 
 import asyncio
@@ -32,8 +32,8 @@ from prompt import EXTRACT_RELATION_PROMPT
 
 ensure_default_gemma4_e4b_it_path()
 
-# --- 런타임 설정: 테스트/노트북과 동일하게 환경변수로 덮어쓰기 ---
-# CONCURRENCY: ``make_request`` 비동기 태스크를 묶어 await 하기 전 최대 개수
+# --- Runtime: same env overrides as tests/notebooks ---
+# CONCURRENCY: max async tasks batched before ``await``
 CONCURRENCY = int(os.getenv("EXTRACTION_CONCURRENCY", "8"))
 _BASE_DIR = Path(__file__).resolve().parent
 _DATASET = os.getenv("MMGRAPHRAG_DATASET", "webqa").strip().lower()
@@ -43,7 +43,7 @@ CACHE_DIR = os.getenv(
     str(_BASE_DIR / "result" / _RUN_ID / "phase3_extraction_cache"),
 )
 _SLICE = _BASE_DIR / "result" / _RUN_ID / f"{_DATASET}_slice"
-# 슬라이스 질문·텍스트: ``<dataset>_questions.jsonl`` / ``<dataset>_texts.jsonl`` (webqa_* / mmqa_*)
+# Slice questions/texts: ``<dataset>_questions.jsonl`` / ``<dataset>_texts.jsonl`` (webqa_* / mmqa_*)
 QUESTION_FILE = os.getenv(
     "EXTRACTION_QUESTION_FILE",
     str(_SLICE / f"{_DATASET}_questions.jsonl"),
@@ -60,17 +60,17 @@ MAX_QUESTIONS = int(os.getenv("EXTRACTION_MAX_QUESTIONS", "20"))
 DRY_RUN = os.getenv("EXTRACTION_DRY_RUN", "0") == "1"
 _HF_GEMMA_MODULE: Optional[object] = None
 
-# --- 산출물 예시(result/<run>/phase3_extraction_cache) ---
-# (1) 질문 JSONL: WebQA 는 Guid+Q, MMQA 는 qid+question 등 필드명 혼용.
-# (2) Phase 2 ``phase2_pattern_cache/<qid>.json`` 의 ``response`` → 이 파일의 ``process_graph_pattern``.
-# (3) 텍스트 JSONL: ``{"id","text"}``; ``metadata.text_doc_ids`` 가 붙일 스니펫 선택(프롬프트 길이 제한으로 잘림).
-# (4) 출력 파일명: ``<qid>_<text_doc_id>.json`` — ``main`` 의 ``task_qid``.
-#     본문 최소 필드: response, llm, qid, text_content, graph_pattern.
-# Dry-run 은 Gemma 대신 문자열 템플릿으로 ``response`` 채움.
+# --- Artifact sketch (result/<run>/phase3_extraction_cache) ---
+# (1) Questions JSONL: WebQA uses Guid+Q; MMQA mixes qid/question field names.
+# (2) Phase 2 ``phase2_pattern_cache/<qid>.json`` ``response`` → ``process_graph_pattern`` here.
+# (3) Texts JSONL ``{"id","text"}``; ``metadata.text_doc_ids`` picks snippets (truncated for prompt length).
+# (4) Output filename ``<qid>_<text_doc_id>.json`` — ``main`` ``task_qid``.
+#     Minimum fields: response, llm, qid, text_content, graph_pattern.
+# Dry-run fills ``response`` from string templates instead of Gemma.
 
 
 def _get_hf_gemma_module():
-    """``pattern.py`` 와 동일 계약으로 HF Gemma 래퍼 지연 import."""
+    """Lazy HF Gemma wrapper import—same contract as ``pattern.py``."""
     global _HF_GEMMA_MODULE
     if _HF_GEMMA_MODULE is not None:
         return _HF_GEMMA_MODULE
@@ -85,7 +85,7 @@ def _get_hf_gemma_module():
 
 
 def _hf_generate_text(prompt: str) -> Tuple[str, dict]:
-    """동기 1패스 디코딩; 캐시 JSON 에 넣을 ``llm`` 메타를 함께 반환."""
+    """Single synchronous decode pass; returns ``llm`` metadata for the cache JSON."""
     gemma = _get_hf_gemma_module()
     if gemma is None:
         raise RuntimeError("HF Gemma module not available or not configured")
@@ -103,30 +103,30 @@ def _get_qid(record: dict) -> str:
     return record.get("qid") or record.get("Guid") or ""
 
 async def load_question_data(path: str) -> List[Dict]:
-    """JSONL 질문 로드; ``Guid`` 또는 ``qid`` 를 키로 하는 dict 반환."""
+    """Load JSONL questions; returns dict keyed by ``Guid`` or ``qid``."""
     with open(path, "r", encoding="UTF-8") as file:
         records = [json.loads(line) for line in file if line.strip()]
         return {_get_qid(r): r for r in records}
 
 
 async def load_text_data(path: str) -> Dict[str, Dict]:
-    """텍스트 JSONL 을 snippet ``id`` → 레코드 dict 로 색인."""
+    """Index text JSONL by snippet ``id`` → record dict."""
     with open(path, "r", encoding="UTF-8") as file:
         return {json.loads(line)["id"]: json.loads(line) for line in file}
 
 
 def hash_prompt(prompt: str) -> str:
-    """레거시/디버그용 MD5 지문; 캐시 키는 현재 구조화된 qid 문자열."""
+    """Legacy/debug MD5 fingerprint; cache keys now use structured qid strings."""
     return hashlib.md5(prompt.encode()).hexdigest()
 
 
 def cache_exists(prompt_hash: str) -> bool:
-    """과거 MD5 파일명 규약으로 ``CACHE_DIR`` 에 객체가 있는지 여부."""
+    """Whether ``CACHE_DIR`` has an object under legacy MD5 filename rules."""
     return os.path.exists(f"{CACHE_DIR}/{prompt_hash}.json")
 
 
 def validate_json_file(file_path):
-    """엄격 JSON 로 파싱 가능하면 True."""
+    """True if file parses as strict JSON."""
     try:
         with open(file_path, "r", encoding="utf-8") as file:
             json.load(file)
@@ -138,7 +138,7 @@ def validate_json_file(file_path):
 
 
 def str_list(str: str) -> List[str]:
-    """GRAPH_PATTERN_PROMPT 선두의 대괄호 타입 리스트 문자열을 토큰 리스트로 파싱."""
+    """Parse leading bracket type list string from ``GRAPH_PATTERN_PROMPT`` into tokens."""
     matches = re.search(r'\[([^\]]+)\]', str)
     if matches:
         entity_types_list = matches.group(1).split(", ")
@@ -149,7 +149,7 @@ def str_list(str: str) -> List[str]:
 
 
 def clean_str(input: Any) -> str:
-    """드라이런 문자열 조합용: HTML 실체화 + 제어 문자 제거."""
+    """For dry-run string assembly: HTML-unescape + strip control chars."""
     if not isinstance(input, str):
         return input
     result = html.unescape(input.strip())
@@ -157,7 +157,7 @@ def clean_str(input: Any) -> str:
 
 
 async def process_graph_pattern(graph_pattern: str):
-    """Phase 2 ``response`` 한 덩어리 → type_list / edge_list 로 분해."""
+    """Split one Phase 2 ``response`` blob into ``type_list`` / ``edge_list``."""
     record_delimiter = "##"
     tuple_delimiter = "<|>"  # carried for readability / parity with pattern grammar
     complete_delimiter = "<|COMPLETE|>"
@@ -171,8 +171,8 @@ async def process_graph_pattern(graph_pattern: str):
 
 async def make_request(session: aiohttp.ClientSession, prompt: str, text_content: str, qid: str, graph_pattern: Dict):
     """
-    (질문, 특정 text_doc_id) 조합당 캐시 파일 1개. 기존 파일이 있으면 그대로 두어 재실행 멱등.
-    ``{input_text}`` 플레이스홀더를 실제 스니펫 본문으로 치환한 뒤 Gemma 호출(드라이런은 템플릿).
+    One cache file per (question, specific text_doc_id); skip existing files for idempotent reruns.
+    Substitute ``{input_text}`` with snippet body then call Gemma (template-only when dry-run).
     """
     if session is None:
         print("Error: session is None")
@@ -207,7 +207,7 @@ async def make_request(session: aiohttp.ClientSession, prompt: str, text_content
 
 
 async def main():
-    """상한 질문만 순회하며 Phase 2 패턴 + 텍스트로 프롬프트 구성, 동시성 제한 배치로 캐시 생성."""
+    """Walk capped questions: build prompts from Phase 2 pattern + text; bounded-concurrency batches."""
     forbid_dry_run("extraction", dry_run=DRY_RUN)
     if not DRY_RUN:
         require_cuda("extraction")
@@ -222,7 +222,7 @@ async def main():
         for key, question in question_items:
             qid = key
             pattern_file = os.path.join(PATTERN_CACHE_DIR, f"{qid}.json")
-            # Phase 2 캐시 부재 시 빈 그래프 스캐폴드. ``question_text`` 는 MMQA ``question`` 필드 우선; WebQA 는 보통 ``Q``.
+            # Missing Phase 2 cache → empty scaffold; ``question_text`` prefers MMQA ``question``; WebQA usually ``Q``.
             graph_pattern = {"type_list": [], "edge_list": [], "question_text": question.get("question", "")}
             if os.path.exists(pattern_file):
                 with open(pattern_file, "r", encoding="utf-8") as file:
@@ -232,7 +232,7 @@ async def main():
             new_template = EXTRACT_RELATION_PROMPT.replace("{Graph_pattern}",
                                             "Entity types: [" + ",".join(graph_pattern["type_list"]) + "]\n" + "\n".join(
                                                 graph_pattern["edge_list"]))
-            # WebQA: 최대 2개 텍스트 스니펫 id 만 사용(``*_texts.jsonl`` 조회)
+            # WebQA: at most two text snippet ids (lookup ``*_texts.jsonl``)
             text_doc_ids = question.get("metadata", {}).get("text_doc_ids", [])[:2]
             joined_texts = []
             for text_doc_id in text_doc_ids:
@@ -242,7 +242,7 @@ async def main():
             text_content = "\n".join(joined_texts)
             if not text_doc_ids:
                 text_doc_ids = [f"{qid}_NO_TEXT"]
-            # 파일 stem: ``phase3_extraction_cache`` 안에서 스니펫별 결과를 분리 저장
+            # File stem: separate per-snippet results inside ``phase3_extraction_cache``
             for text_doc_id in text_doc_ids:
                 task_qid = f"{qid}_{text_doc_id}"
                 task = make_request(session, new_template, text_content, task_qid, graph_pattern)
@@ -252,7 +252,7 @@ async def main():
                     tasks = []
 
             k += 1
-            print(f'{datetime.now()}:{k / len(question_items)}')  # 대략적 진행률(처리 중인 질문 인덱스 비율)
+            print(f'{datetime.now()}:{k / len(question_items)}')  # coarse progress ratio over question index
         if len(tasks) > 0:
             await asyncio.gather(*tasks)
 

@@ -1,7 +1,7 @@
 """
 Shared helpers for GraphML 2D/3D visualizers.
 
-Aligns with `.dev_document/txt/20260320_1312.txt`: type colors, LCC guard, labels.
+Provides type colors, largest-component guard, and label helpers.
 """
 
 from __future__ import annotations

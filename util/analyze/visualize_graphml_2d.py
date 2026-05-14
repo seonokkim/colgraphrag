@@ -2,8 +2,6 @@
 """
 Static 2D GraphML figures (matplotlib) for papers / slides.
 
-See `.dev_document/txt/20260320_1312.txt` § "1) 2D 코드".
-
 Usage (from `query-driven_mm_graph_rag`):
   python util/analyze/visualize_graphml_2d.py --graphml result/.../foo_graph.graphml --out fig.png
   # Always writes YYYYMMDD_HHMMSS_fig.png (local time prefix on the basename).

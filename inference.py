@@ -1,17 +1,17 @@
-"""Phase 5 — GraphRAG 최종 추론 CLI.
+"""Phase 5 — GraphRAG final inference CLI.
 
-입력:
-  - Phase 1 슬라이스 ``*_questions.jsonl``
-  - Phase 4 산출 ``phase4_graphs_real/<qid>_graph.graphml`` (또는 env 로 지정한 디렉터리)
+Inputs:
+  - Phase 1 slice ``*_questions.jsonl``
+  - Phase 4 graphs ``phase4_graphs_real/<qid>_graph.graphml`` (or directory from env)
 
-처리 개요:
-  1) (선택) 메타의 ``image_doc_ids`` 에 대해 ColEmbed 질문–이미지 MaxSim 재순위.
-     순위는 ``*_retrieval.json`` 등으로만 기록되고 **답변 프롬프트에는 넣지 않음**.
-  2) 그래프를 ``graph_to_str`` 로 텍스트 요약(텍스트/이미지/테이블 블록 + 관계).
-  3) 데이터셋에 따라 ``LLM_ANSWER_PROMPT``(WebQA·일반) 또는 ``MMQA_ANSWER_PROMPT``(MMQA)로
-     HF Gemma 4 E4B IT 에 최종 답 생성.
+Flow:
+  1) (Optional) ColEmbed question–image MaxSim rerank for ``image_doc_ids`` in metadata.
+     Ranks go only to ``*_retrieval.json`` etc.; **not** into the answer prompt.
+  2) Summarize graph with ``graph_to_str`` (text/image/table blocks + relations).
+  3) Generate final answers with ``LLM_ANSWER_PROMPT`` (WebQA/general) or ``MMQA_ANSWER_PROMPT`` (MMQA)
+     via HF Gemma 4 E4B IT.
 
-``INFERENCE_DRY_RUN=1`` 이면 ColEmbed/Gemma 호출 없이 그래프 휴리스틱만 사용.
+``INFERENCE_DRY_RUN=1`` skips ColEmbed/Gemma and uses graph heuristics only.
 """
 import io
 import json
@@ -41,7 +41,7 @@ from PIL import Image, ImageDraw, ImageFont
 from transformers import AutoProcessor, AutoModel
 from tqdm import tqdm
 
-# INFERENCE_DRY_RUN=1: ColEmbed·Gemma 없이 그래프 휴리스틱 답만(스모크/CI)
+# INFERENCE_DRY_RUN=1: graph-heuristic answers only, no ColEmbed/Gemma (smoke/CI)
 DRY_RUN = os.getenv("INFERENCE_DRY_RUN", "0") == "1"
 _HF_GEMMA_MODULE = None
 
@@ -63,7 +63,7 @@ def _get_hf_gemma_module():
 
 
 def _hf_gemma_generate_text(prompt: str) -> tuple[str, dict]:
-    """프로세스 내 HF Gemma 4 E4B IT 로 답 생성; sidecar용 메타 dict 동반."""
+    """Generate answer with in-process HF Gemma 4 E4B IT; returns sidecar metadata dict."""
     gemma = _get_hf_gemma_module()
     if gemma is None:
         raise RuntimeError("HF Gemma module not available or not configured")
@@ -76,7 +76,7 @@ def _hf_gemma_generate_text(prompt: str) -> tuple[str, dict]:
     return text, llm_meta
 
 
-# --- 경로·질문 파일·출력: 환경변수로 덮어쓰기(노트북/CI에서 RUN_ID·슬라이스 동기화) ---
+# --- Paths, question file, output: env overrides (sync RUN_ID/slice with notebooks/CI) ---
 _BASE_DIR = Path(__file__).resolve().parent
 _DATASET = os.getenv("MMGRAPHRAG_DATASET", "webqa").strip().lower()
 _RUN_ID = resolve_pipeline_run_id(_BASE_DIR, _DATASET)
@@ -106,7 +106,7 @@ def _colembed_fallback_log_file() -> Path:
         _INFER_COLEMBED_FALLBACK_LOG = new_session_log_path(_BASE_DIR, "inference_colembed")
     return _INFER_COLEMBED_FALLBACK_LOG
 
-# ColEmbed MaxSim 전역 캐시(이 프로세스에서 한 번만 로드)
+# ColEmbed MaxSim global cache (loaded once per process)
 model = None
 processor = None
 logger = logging.getLogger("colembed_mm_graph_rag")
@@ -119,7 +119,7 @@ def _default_retrieval_json_path(output_json_path: str) -> str:
 
 
 def _default_models_sidecar_path(output_json_path: str) -> str:
-    """예측 JSON 옆에 ``*_models.json`` — qid별 사용 LLM 티어/모델 경로 기록. 예측 파일 포맷은 평가기 호환 유지."""
+    """Sidecar ``*_models.json`` next to predictions: per-qid LLM tier/model path; predictions stay evaluator-compatible."""
     if output_json_path.endswith(".json"):
         return output_json_path[:-5] + "_models.json"
     return output_json_path + "_models.json"
@@ -136,7 +136,7 @@ def _get_question_text(question: dict) -> str:
 
 
 def _summarise_qid_to_llm(qid_to_llm: dict[str, dict]) -> dict:
-    """sidecar 요약: tier·모델 문자열 별 건수."""
+    """Sidecar summary: counts per tier and model string."""
     by_tier: dict[str, int] = {}
     by_model: dict[str, int] = {}
     for meta in qid_to_llm.values():
@@ -150,7 +150,7 @@ def _summarise_qid_to_llm(qid_to_llm: dict[str, dict]) -> dict:
 
 
 def _write_models_sidecar(path: str, qid_to_llm: dict[str, dict]) -> None:
-    """qid→LLM 메타 맵과 run 요약을 한 파일에 기록."""
+    """Write qid→LLM meta map plus run summary to one file."""
     payload = {
         "meta": {
             "run_id": _RUN_ID,
@@ -174,7 +174,7 @@ def _strip_question_id_prefix(qid: str, token: str) -> str:
 
 
 def _tokens_for_retrieval_attrs(node_or_edge_attrs: Mapping, qid: str) -> list[str]:
-    """노드/엣지 속성에서 검색용 문서 id 목록: ``doc_id`` 우선, 없으면 ``source_id`` 쉼표 분해 후 qid 접두 제거."""
+    """Doc ids for retrieval from node/edge attrs: prefer ``doc_id``, else split ``source_id`` and strip qid prefix."""
     if not isinstance(node_or_edge_attrs, Mapping):
         return []
     doc_id_raw = node_or_edge_attrs.get("doc_id")
@@ -190,9 +190,9 @@ def _tokens_for_retrieval_attrs(node_or_edge_attrs: Mapping, qid: str) -> list[s
     return [_strip_question_id_prefix(qid, ch) for ch in chunks]
 
 
-# --- 그래프만 쓰는 후보 순위: 노드·엣지의 doc_id/source_id에 그래프 차수(연결 강도)를 가중치로 부여 ---
+# --- Graph-only candidate ranking: weight doc_id/source_id by node degree (connectivity strength) ---
 def canonical_graph_doc_candidates(graph: nx.Graph, qid: str, capacity: int = 64) -> list[dict]:
-    """그래프 위상만 사용한 후보 순위: 노드·엣지에 붙은 doc/table id 에 차수 기반 가중치 부여."""
+    """Rank candidates from topology only: degree-weighted doc/table ids on nodes and edges."""
     scores: dict[str, float] = {}
 
     def _bump(candidate_ids: list[str], strength: float) -> None:
@@ -236,7 +236,7 @@ def _merge_colembed_with_graph_rank(
     top_k: int,
     qid: str,
 ) -> list[dict]:
-    """ColEmbed 이미지 순위를 앞에 두고, 남는 슬롯은 ``canonical_graph_doc_candidates`` 로 채움."""
+    """Prepend ColEmbed image ranks; fill remaining slots from ``canonical_graph_doc_candidates``."""
     gc = canonical_graph_doc_candidates(graph, qid, capacity=96)
     if not colembed_entries:
         return gc[:top_k]
@@ -279,7 +279,7 @@ def _merge_colembed_with_graph_rank(
     return merged
 
 
-# --- 슬라이스 이미지 행의 path/url/id 로 디스크 실경로 결정(ColEmbed MaxSim 픽셀 입력) ---
+# --- Resolve on-disk paths from slice image rows path/url/id (ColEmbed MaxSim pixels) ---
 def _default_webqa_imgs_root() -> Path:
     env_root = os.getenv("WEBQA_DATA_ROOT", "").strip()
     if env_root:
@@ -300,7 +300,7 @@ def _default_mmqa_imgs_root() -> Path:
 
 
 def _load_slice_images_index(slice_dir: Path) -> dict[str, dict]:
-    """``<dataset>_images.jsonl`` (또는 webqa 호환 파일명)에서 image id → 메타 row."""
+    """image id → row from ``<dataset>_images.jsonl`` (or WebQA-compatible filename)."""
     idx: dict[str, dict] = {}
     for fname in (f"{_DATASET}_images.jsonl", "webqa_images.jsonl"):
         p = slice_dir / fname
@@ -318,7 +318,7 @@ def _load_slice_images_index(slice_dir: Path) -> dict[str, dict]:
     return idx
 
 
-# 외부 호출 호환 별칭
+# Back-compat alias for external callers
 _load_webqa_slice_images_index = _load_slice_images_index
 
 
@@ -376,8 +376,8 @@ def colembed_maxsim_ranked_sources(
     top_k: int,
 ) -> tuple[list[dict], bool]:
     """
-    ColEmbed VL 체크포인트로 질문–이미지 MaxSim 점수 산출(GPU 우선).
-    (ranked 행 목록, 성공 여부) 반환; 픽셀을 LLM 답 프롬프트에 넣지는 않음.
+    Question–image MaxSim scores via ColEmbed VL checkpoint (GPU when available).
+    Returns (ranked rows, ok); pixels are not fed into the LLM answer prompt.
     """
     paths: list[str] = []
     ids: list[str] = []
@@ -425,7 +425,7 @@ def colembed_maxsim_ranked_sources(
 
 def _extract_dry_run_answer_from_graph(g: nx.Graph, question_text: str) -> str:
     """
-    드라이런 전용: 플레이스홀더가 아닌 TEXT→IMAGE→기타 엔티티 순으로 첫 후보 문자열 선택.
+    Dry-run only: pick first non-placeholder candidate in TEXT → IMAGE → other order.
     """
     PLACEHOLDER_TERMS = {"placeholder", "dummy", "webqa placeholder", "webqa placeholder dummy", "unknown"}
     question_lower = question_text.lower().strip()
@@ -532,7 +532,7 @@ def use_score_debug_log() -> bool:
 
 
 def resolve_colembed_max_input_tiles() -> int:
-    """추론 시 ``AutoProcessor`` 의 ``max_input_tiles``. 기본 8; 세부는 논문/내부 노트 참고. env 로 재정의."""
+    """``AutoProcessor`` ``max_input_tiles`` at inference; default 8; override via env."""
     raw = os.getenv("COLEMBED_MAX_INPUT_TILES", "").strip()
     if not raw:
         return 8
@@ -544,7 +544,7 @@ def resolve_colembed_max_input_tiles() -> int:
 
 
 def resolve_colembed_topk_images() -> int:
-    """VLM 전 ColEmbed 단계에서 가져갈 이미지 shortlist 크기. 기본 10; env ``COLEMBED_TOPK_IMAGES``."""
+    """Image shortlist size before VLM ColEmbed stage; default 10; env ``COLEMBED_TOPK_IMAGES``."""
     raw = os.getenv("COLEMBED_TOPK_IMAGES", "").strip()
     if not raw:
         return 10
@@ -556,7 +556,7 @@ def resolve_colembed_topk_images() -> int:
 
 
 def _load_colembed_processor(model_ref: str, trust_remote_code: bool):
-    """ColEmbed ``AutoProcessor`` 단일 생성 지점. ``max_input_tiles`` 를 kwargs 로 넣고, 미지원이면 사후 setattr"""
+    """Single ColEmbed ``AutoProcessor`` factory; pass ``max_input_tiles`` in kwargs or setattr post-load."""
     tiles = resolve_colembed_max_input_tiles()
     try:
         proc = AutoProcessor.from_pretrained(
@@ -575,7 +575,7 @@ def _load_colembed_processor(model_ref: str, trust_remote_code: bool):
 
 
 def _apply_tiles_post_load(processor, tiles: int) -> None:
-    """from_pretrained 가 타일 인자를 무시한 프로세서에 대한 best-effort 보정."""
+    """Best-effort fix when ``from_pretrained`` ignores tile kwargs."""
     if hasattr(processor, "max_input_tiles"):
         try:
             setattr(processor, "max_input_tiles", tiles)
@@ -587,7 +587,7 @@ _TILES_LOG_DONE = False
 
 
 def _log_tiles_once(tiles: int, *, success: bool) -> None:
-    """프로세스당 1회: 유효 ``max_input_tiles`` 및 top_k 로그."""
+    """Log effective ``max_input_tiles`` and top_k once per process."""
     global _TILES_LOG_DONE
     if _TILES_LOG_DONE:
         return
@@ -606,7 +606,7 @@ def _log_tiles_once(tiles: int, *, success: bool) -> None:
 
 
 def ensure_colembed_retrieval_api(loaded_model) -> None:
-    """MaxSim 경로에 필요한 메서드 존재 여부 선검증."""
+    """Pre-check required methods exist for the MaxSim path."""
     required = ("forward_queries", "forward_images", "get_scores")
     missing = [name for name in required if not hasattr(loaded_model, name)]
     if missing:
@@ -618,7 +618,7 @@ def ensure_colembed_retrieval_api(loaded_model) -> None:
 
 def probe_model_output_contract(model_ref: str = "", device_map: str = "auto") -> dict:
     """
-    개발/진단용: 모델 출력에 text_embeds·image_embeds·logits_per_text 등이 있는지 프로브.
+    Dev/diagnostic: probe whether outputs expose text_embeds, image_embeds, logits_per_text, etc.
     """
     ref = model_ref or resolve_vision_model_ref()
     trust_remote_code = use_trust_remote_code()
@@ -646,7 +646,7 @@ def probe_model_output_contract(model_ref: str = "", device_map: str = "auto") -
         padding=True,
         truncation=True,
     )
-    # 프로브 입력 텐서를 모델 파라미터와 동일 디바이스로 이동(cuda/cpu 불일치 방지)
+    # Move probe tensors to model parameter device (avoid cuda/cpu mismatch)
     model_device = next(local_model.parameters()).device
     for k, v in list(inputs.items()):
         if isinstance(v, torch.Tensor):
@@ -666,16 +666,16 @@ def probe_model_output_contract(model_ref: str = "", device_map: str = "auto") -
     return result
 
 def str_to_dict_list(str_dict_list):
-    """``json.loads`` 로 리스트/dict 복원; 실패 시 None."""
+    """Restore list/dict via ``json.loads``; None on failure."""
     try:
-        # JSON 문자열을 파이썬 list/dict 로 복원(실패 시 None)
+        # Parse JSON string to Python list/dict (None on failure)
         result_list = json.loads(str_dict_list)
         return result_list
     except json.JSONDecodeError as e:
         return None
 
 def graph_to_graphml_str(graph):
-    """GraphML 바이트 → UTF-8 문자열(소규모 헬퍼)."""
+    """GraphML bytes → UTF-8 string (small helper)."""
     with io.BytesIO() as byte_output:
         nx.write_graphml(graph, byte_output)
         byte_output.seek(0)
@@ -683,9 +683,9 @@ def graph_to_graphml_str(graph):
     return graphml_str
 
 
-# --- Gemma 프롬프트에 들어가는 그래프 요약(픽셀 없음; 노드/엣지의 entity·description 텍스트만) ---
+# --- Graph summary for Gemma prompts (no pixels; node/edge entity·description text only) ---
 def graph_to_str(graph):
-    """Gemma 프롬프트용: 픽셀 대신 노드·엣지의 이름/타입/설명을 블록 텍스트로 요약."""
+    """Prompt-facing summary: blocks of node/edge name/type/description instead of pixels."""
     output = []
     text_nodes = []
     image_nodes = []
@@ -757,9 +757,9 @@ def graph_to_str(graph):
     return '\n'.join(output)
 
 
-# 다른 모듈용: 경로 리스트에 대한 ColEmbed 상위 n 이미지 인덱스(추론 CLI 메인 루프는 graph_to_str 경로 사용)
+# Other modules: top-n image indices for path lists (inference CLI main loop uses graph_to_str)
 def text_to_image_feature(image_paths, texts, n=None):
-    """ColEmbed MaxSim: ``texts[0]`` 에 대한 상위 ``n`` 이미지 인덱스. ``n`` 기본은 env 기반."""
+    """ColEmbed MaxSim: top-``n`` image indices for ``texts[0]``; default ``n`` from env."""
     global model, processor
     if n is None:
         n = resolve_colembed_topk_images()
@@ -774,7 +774,7 @@ def text_to_image_feature(image_paths, texts, n=None):
         query_embeddings = model.forward_queries(texts, batch_size=max(1, len(texts)))
         image_embeddings = model.forward_images(images, batch_size=max(1, len(images)))
         scores = model.get_scores(query_embeddings, image_embeddings)
-        # 레거시 반환: 첫 번째 텍스트 쿼리에 대한 이미지 인덱스 목록
+        # Legacy return: image index list for the first text query
     scores_1d = scores[0]
     k = min(int(n), int(scores_1d.shape[0]))
     if k <= 0:
@@ -795,7 +795,7 @@ def text_to_image_feature(image_paths, texts, n=None):
     return indices
 
 def extract_answer_list(text, answer_pattern=r'<\|Answer\|>([\s\S]*?)<\|\\Answer\|>'):
-    """``<|Answer|>...<|\Answer|>`` 안의 파이썬 리스트 문자열을 파싱해 첫 목록 반환."""
+    """Parse first Python-list string inside ``<|Answer|>...<|\Answer|>``."""
     output = text
     answers = []
     match = re.findall(answer_pattern, output)
@@ -812,7 +812,7 @@ def extract_answer_list(text, answer_pattern=r'<\|Answer\|>([\s\S]*?)<\|\\Answer
 
 
 def load_jsonl_data(path):
-    """질문/기타 JSONL 로드."""
+    """Load question/other JSONL."""
     with open(path, "r", encoding='UTF-8') as file:
         return [json.loads(line) for line in file]
 
@@ -823,8 +823,8 @@ if __name__ == "__main__":
     from util.pipeline_session_log import run_with_session_stdio_tee
 
     def _inference_cli_main() -> None:
-        # dry-run: Gemma/ColEmbed 실호출 없이 그래프 휴리스틱 답 + retrieval 슬롯만 채움
-        # 실제 실행: ColEmbed(옵션)로 retrieval_predictions 기록 후, 답은 graph_to_str + Gemma
+        # dry-run: no Gemma/ColEmbed calls; graph-heuristic answers + retrieval slots only
+        # real run: optional ColEmbed writes retrieval_predictions; answers via graph_to_str + Gemma
         forbid_dry_run("inference", dry_run=DRY_RUN)
         if not DRY_RUN:
             require_cuda("inference")
@@ -862,7 +862,7 @@ if __name__ == "__main__":
         _topk_colembed = int(os.getenv("INFERENCE_COLEMBED_TOP_K", "10"))
         _mmqa_colembed_img_cap = int(os.getenv("INFERENCE_MMQA_COLEMBED_IMG_CAP", "5"))
 
-        # 질문 메타의 이미지 id 후보만 ColEmbed로 재순위; 실패 시 그래프 위상 순위로 대체
+        # Rerank metadata image_doc_ids with ColEmbed; on failure fall back to graph topology rank
         def _fill_retrieval(question_dict: dict, graph_obj: nx.Graph) -> list:
             qid_res = _get_qid(question_dict)
             if _use_colembed_retrieval:
@@ -935,7 +935,7 @@ if __name__ == "__main__":
                 try:
                     g = nx.read_graphml(graph_path)
                     retrieval_predictions[qid] = _fill_retrieval(question, g)
-                    # retrieval 순위는 prompt에 넣지 않음; 컨텍스트는 그래프 텍스트 전부
+                    # retrieval ranks not in prompt; context is full graph text summary
                     _ans_tpl = MMQA_ANSWER_PROMPT if _DATASET == "mmqa" else LLM_ANSWER_PROMPT
                     prompt = _ans_tpl.replace("{question}", _get_question_text(question)).replace(
                         "{GraphML}", graph_to_str(g)
