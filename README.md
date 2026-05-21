@@ -5,6 +5,8 @@ reranks multimodal candidates with **ColEmbed late interaction (MaxSim)**,
 and generates answers with an **in-process HF Gemma 4 E4B IT** (or **`--dry-run`**
 without GPU).
 
+**Paper:** [ColGraphRAG: Late-Interaction Evidence Retrieval for Multimodal GraphRAG](asset/colgraphrag.pdf)
+
 The implementation follows **Query-Driven Multimodal GraphRAG** (Bu et al., ACL
 2025 Findings). It supports **WebQA** and **MultiModalQA (MMQA)** corpora via
 `--dataset webqa` / `--dataset mmqa`.
@@ -331,7 +333,7 @@ Runs are rooted at **`result/<dataset-namespace>/<run-id>/`** (e.g.
 
 - Bu et al., *Query-Driven Multimodal GraphRAG: Dynamic Local Knowledge Graph
   Construction for Online Reasoning* (Findings of ACL, 2025).
-  Anthology: <https://aclanthology.org/2025.findings-acl.1100/>  
+  Anthology: <https://aclanthology.org/2025.findings-acl.1100/> ·
   Related code: <https://github.com/DMiC-Lab-HFUT/Query-Driven-Multimodal-GraphRAG>
 - Talmor et al., *MultiModalQA: Complex Question Answering over Text, Tables and Images*,
   ICLR 2021. [arXiv:2104.06039](https://arxiv.org/abs/2104.06039) — data:
